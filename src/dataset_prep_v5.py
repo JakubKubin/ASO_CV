@@ -1054,7 +1054,6 @@ def create_data_loaders(config=None, input_size=224, batch_size=8, num_workers=4
 
     return train_loader, val_loader
 
-
 def main():
     """
     Main function to prepare the dataset and test the data loading pipeline.
