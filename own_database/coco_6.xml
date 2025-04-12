@@ -1,0 +1,26 @@
+<annotation>
+	<folder>own_database</folder>
+	<filename>coco_6.jpg</filename>
+	<path>C:\Users\Kubin\Desktop\ASO_CV\own_database\coco_6.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3024</width>
+		<height>4032</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>cocolino</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>939</xmin>
+			<ymin>1341</ymin>
+			<xmax>1959</xmax>
+			<ymax>3526</ymax>
+		</bndbox>
+	</object>
+</annotation>

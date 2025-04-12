@@ -1,0 +1,38 @@
+<annotation>
+	<folder>own_database</folder>
+	<filename>cola_11.jpg</filename>
+	<path>C:\Users\Kubin\Desktop\ASO_CV\own_database\cola_11.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3024</width>
+		<height>4032</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>2034</xmin>
+			<ymin>1926</ymin>
+			<xmax>2459</xmax>
+			<ymax>3541</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>2394</xmin>
+			<ymin>1916</ymin>
+			<xmax>2789</xmax>
+			<ymax>3466</ymax>
+		</bndbox>
+	</object>
+</annotation>
