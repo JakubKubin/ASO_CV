@@ -43,7 +43,7 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 # Definicja klas produktów
-CLASSES = ['__background__', 'CocaCola', 'KartonMleka', 'KubekJogurtu', 'Maslo', 'CocolinoButelka']
+CLASSES = ['__background__', 'CocaCola', 'KartonMleka', 'KubekJogurtu', 'Maslo', 'CocolinoButelka', 'Wine glass', 'Drink']
 CLASS_TO_IDX = {cls_name: i for i, cls_name in enumerate(CLASSES)}
 
 # Mapowanie klas OpenImages i COCO na nasze klasy
@@ -226,10 +226,10 @@ def download_datasets(config=None):
         # 5. Dzielimy dane na zbiór treningowy i walidacyjny
         train_dataset, val_dataset = split_dataset(joint_dataset_filtered, val_split=config.val_split)
 
-        from pprint import pprint
-        pprint(joint_dataset_filtered)
-        pprint(train_dataset)
-        pprint(val_dataset)
+        # from pprint import pprint
+        # pprint(joint_dataset_filtered)
+        # pprint(train_dataset)
+        # pprint(val_dataset)
 
         # train_dataset.persistent = True
         session = fo.launch_app(train_dataset, port=5151)
@@ -833,7 +833,7 @@ class GroceryDataset(Dataset):
             img, target = self.transform(img, target)
 
         sample = (img, target)
-        print("DEBUG: __getitem__ sample type:", type(sample), "length:", len(sample))
+        # print("DEBUG: __getitem__ sample type:", type(sample), "length:", len(sample))
         return img, target
 
     def __len__(self):
