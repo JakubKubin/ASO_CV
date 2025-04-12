@@ -8,7 +8,7 @@ import numpy as np
 from tqdm import tqdm
 
 # Importy klas i funkcji z poprzednich skryptów
-from src.dataset_preparation import get_dataloaders, CLASSES
+from old_files.dataset_preparation import get_dataloaders, CLASSES
 from src.model_implementation import initialize_model, save_model
 
 def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10):

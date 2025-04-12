@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 
 # Importy z naszych modułów
-from src.dataset_preparation import download_open_images_subset, get_dataloaders
+from old_files.dataset_preparation import download_open_images_subset, get_dataloaders
 from src.model_implementation import initialize_model, save_model, load_model
 from src.model_train import train_model
 from src.evaluation import evaluate_model, print_evaluation_results

@@ -8,7 +8,7 @@ import cv2
 import time
 
 # Importy z naszych modułów
-from src.dataset_preparation import CLASSES
+from old_files.dataset_preparation import CLASSES
 from src.model_implementation import load_model
 
 def prepare_image(image_path, device):

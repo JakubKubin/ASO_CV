@@ -6,7 +6,7 @@ from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 
 # Importy klas i funkcji z poprzedniego skryptu
-from src.dataset_preparation import CLASSES
+from old_files.dataset_preparation import CLASSES
 
 def get_faster_rcnn_model(num_classes=len(CLASSES), pretrained_backbone=True):
     """

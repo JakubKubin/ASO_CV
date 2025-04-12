@@ -6,7 +6,7 @@ from sklearn.metrics import confusion_matrix, precision_recall_fscore_support, a
 import time
 
 # Importy z naszych modułów
-from src.dataset_preparation import CLASSES
+from old_files.dataset_preparation import CLASSES
 
 def calculate_ap(recall, precision):
     """
