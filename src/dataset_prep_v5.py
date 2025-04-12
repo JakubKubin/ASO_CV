@@ -60,12 +60,6 @@ CLASS_TO_IDX = {cls_name: i for i, cls_name in enumerate(CLASSES)}
 #     'Plastic bottle': 'CocolinoButelka'
 # }
 
-# COCO_MAPPING = {
-#     # COCO labels -> nasze klasy
-#     'bottle': 'CocolinoButelka',
-#     'cup': 'KubekJogurtu',
-# }
-
 OPENIMAGES_MAPPING = {
     # OpenImages labels -> nasze klasy
     'Wine glass': 'CocaCola',
@@ -225,11 +219,6 @@ def download_datasets(config=None):
 
         # 5. Dzielimy dane na zbiór treningowy i walidacyjny
         train_dataset, val_dataset = split_dataset(joint_dataset_filtered, val_split=config.val_split)
-
-        # from pprint import pprint
-        # pprint(joint_dataset_filtered)
-        # pprint(train_dataset)
-        # pprint(val_dataset)
 
         # train_dataset.persistent = True
         session = fo.launch_app(train_dataset, port=5151)
@@ -825,15 +814,19 @@ class GroceryDataset(Dataset):
 
         # Add masks if available
         if len(masks) > 0:
-            masks = torch.as_tensor(masks, dtype=torch.uint8)
+            try:
+                # np.stack is preferred if all masks have the same shape.
+                masks_np = np.stack(masks)
+            except Exception as e:
+                logger.warning(f"Could not stack masks: {e}. Falling back to np.array conversion.")
+                masks_np = np.array(masks)
+            masks = torch.as_tensor(masks_np, dtype=torch.uint8)
             target["masks"] = masks
 
         # Apply transforms
         if self.transform is not None:
             img, target = self.transform(img, target)
 
-        sample = (img, target)
-        # print("DEBUG: __getitem__ sample type:", type(sample), "length:", len(sample))
         return img, target
 
     def __len__(self):
@@ -1094,12 +1087,6 @@ def main():
     images, targets = next(train_iter)
 
     logger.info(f"Loaded batch with {len(images)} images")
-
-    logger.info(f"Type of images[0]: {type(images[0])}")
-    if isinstance(images[0], tuple):
-        logger.info("images[0] is a tuple. Its content types: " + 
-                    f"{type(images[0][0])}, {type(images[0][1])}")
-
     logger.info(f"Image shape: {images[0].shape}")
     logger.info(f"Target keys: {targets[0].keys()}")
 
