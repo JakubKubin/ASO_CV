@@ -24,6 +24,17 @@ from functools import partial
 import time
 import hashlib
 import sys
+from pprint import pprint
+
+# Get all COCO classes (80 categories)
+# coco_classes = foz.load_zoo_dataset_info("coco-2017").classes
+# print(f"COCO classes ({len(coco_classes)}):")
+# pprint(coco_classes)
+
+# Get all OpenImages classes (~600 categories)
+# openimages_classes = foz.load_zoo_dataset_info("open-images-v7").classes
+# print(f"OpenImages classes ({len(openimages_classes)}):")
+# pprint(openimages_classes)
 
 # Create or get the logger
 logger = logging.getLogger("grocery_dataset")
@@ -43,47 +54,31 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 # Definicja klas produktów
-CLASSES = ['__background__', 'CocaCola', 'KartonMleka', 'KubekJogurtu', 'Maslo', 'CocolinoButelka', 'Wine glass', 'Drink']
+CLASSES = ['__background__', 'Coca Cola', 'Karton Mleka', 'Kubek Jogurtu', 'Maslo', 'Cocolino Butelka', 'Wine glass', 'Drink']
 CLASS_TO_IDX = {cls_name: i for i, cls_name in enumerate(CLASSES)}
 
-# Mapowanie klas OpenImages i COCO na nasze klasy
-# OPENIMAGES_MAPPING = {
-#     # OpenImages labels -> nasze klasy
-#     'Tin can': 'CocaCola',
-#     'Soft drink': 'CocaCola',
-#     'Carbonated water': 'CocaCola',
-#     'Milk': 'KartonMleka',
-#     'Dairy': 'KartonMleka',
-#     'Yogurt': 'KubekJogurtu',
-#     'Butter': 'Maslo',
-#     'Bottle': 'CocolinoButelka',
-#     'Plastic bottle': 'CocolinoButelka'
-# }
 
 OPENIMAGES_MAPPING = {
     # OpenImages labels -> nasze klasy
-    'Wine glass': 'CocaCola',
-    'Drink': 'CocaCola',
-    # 'Carbonated water': 'CocaCola',
-    # 'Milk': 'KartonMleka',
-    # 'Dairy': 'KartonMleka',
-    # 'Yogurt': 'KubekJogurtu',
+    'Wine glass': 'Wine glass',
+    'Drink': 'Drink',
+    'Milk': 'Karton Mleka',
     # 'Butter': 'Maslo',
-    # 'Bottle': 'CocolinoButelka',
-    # 'Plastic bottle': 'CocolinoButelka'
+    'Dairy Product': 'Kubek Jogurtu',
 }
 
 COCO_MAPPING = {
     # COCO labels -> nasze klasy
-    'bottle': 'CocaCola',
-    'cup': 'CocaCola',
+    'bottle': 'Wine glass',
+    'cup': 'Drink',
+    'wine glass': 'Wine glass',
 }
 
 # Configuration class for easy parameter management
 class DatasetConfig:
     def __init__(self, 
                  data_dir='data',
-                 openimages_max_samples=500,
+                 openimages_max_samples=700,
                  coco_max_samples=300,
                  val_split=0.2,
                  min_box_area=100,  # Minimum bounding box area in pixels
@@ -1066,7 +1061,7 @@ def main():
     """
     # Configure dataset
     config = DatasetConfig(
-        openimages_max_samples=500,
+        openimages_max_samples=700,
         coco_max_samples=300,
         val_split=0.2,
         seed=42,
