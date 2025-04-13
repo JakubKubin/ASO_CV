@@ -1,0 +1,38 @@
+<annotation>
+	<folder>rotated</folder>
+	<filename>IMG_7588.jpg</filename>
+	<path>C:\Users\Patrycja\Downloads\Aso\images\rotated\IMG_7588.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>4284</width>
+		<height>5712</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1882</xmin>
+			<ymin>1015</ymin>
+			<xmax>2919</xmax>
+			<ymax>4102</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>951</xmin>
+			<ymin>1159</ymin>
+			<xmax>1963</xmax>
+			<ymax>3896</ymax>
+		</bndbox>
+	</object>
+</annotation>
