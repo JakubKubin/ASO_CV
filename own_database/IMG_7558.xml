@@ -1,0 +1,26 @@
+<annotation>
+	<folder>rotated</folder>
+	<filename>IMG_7558.jpg</filename>
+	<path>C:\Users\Patrycja\Downloads\Aso\images\rotated\IMG_7558.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>4284</width>
+		<height>5712</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Milk</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1151</xmin>
+			<ymin>1702</ymin>
+			<xmax>3394</xmax>
+			<ymax>4359</ymax>
+		</bndbox>
+	</object>
+</annotation>
