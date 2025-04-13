@@ -1,0 +1,110 @@
+<annotation>
+	<folder>rotated</folder>
+	<filename>IMG_7598.jpg</filename>
+	<path>C:\Users\Patrycja\Downloads\Aso\images\rotated\IMG_7598.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>4284</width>
+		<height>5712</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>3151</xmin>
+			<ymin>1327</ymin>
+			<xmax>3601</xmax>
+			<ymax>2709</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>2601</xmin>
+			<ymin>1371</ymin>
+			<xmax>3113</xmax>
+			<ymax>2740</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1963</xmin>
+			<ymin>1384</ymin>
+			<xmax>2594</xmax>
+			<ymax>2852</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1251</xmin>
+			<ymin>1340</ymin>
+			<xmax>1976</xmax>
+			<ymax>2959</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1163</xmin>
+			<ymin>4665</ymin>
+			<xmax>1744</xmax>
+			<ymax>5540</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1713</xmin>
+			<ymin>4521</ymin>
+			<xmax>2182</xmax>
+			<ymax>5246</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>2213</xmin>
+			<ymin>4302</ymin>
+			<xmax>2676</xmax>
+			<ymax>4977</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>3676</xmin>
+			<ymin>1340</ymin>
+			<xmax>3982</xmax>
+			<ymax>2484</ymax>
+		</bndbox>
+	</object>
+</annotation>

@@ -1,0 +1,26 @@
+<annotation>
+	<folder>rotated</folder>
+	<filename>IMG_7604.jpg</filename>
+	<path>C:\Users\Patrycja\Downloads\Aso\images\rotated\IMG_7604.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>4284</width>
+		<height>5712</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>313</xmin>
+			<ymin>1227</ymin>
+			<xmax>1719</xmax>
+			<ymax>4290</ymax>
+		</bndbox>
+	</object>
+</annotation>
