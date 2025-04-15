@@ -1,0 +1,26 @@
+<annotation>
+	<folder>own_database</folder>
+	<filename>coco_40.jpg</filename>
+	<path>C:\Users\aceli\Desktop\PROJEKT ASO\ASO_CV\own_database\coco_40.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3024</width>
+		<height>4032</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>cocolino</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>386</xmin>
+			<ymin>1447</ymin>
+			<xmax>1431</xmax>
+			<ymax>3819</ymax>
+		</bndbox>
+	</object>
+</annotation>
