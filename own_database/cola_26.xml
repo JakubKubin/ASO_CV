@@ -1,0 +1,26 @@
+<annotation>
+	<folder>do_boxingu_jutro_na_ASO</folder>
+	<filename>cola_26.jpg</filename>
+	<path>C:\Users\sandr\Desktop\do_boxingu_jutro_na_ASO\cola_26.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3024</width>
+		<height>4032</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1014</xmin>
+			<ymin>1304</ymin>
+			<xmax>1709</xmax>
+			<ymax>3613</ymax>
+		</bndbox>
+	</object>
+</annotation>

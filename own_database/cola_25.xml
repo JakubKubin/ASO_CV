@@ -1,0 +1,50 @@
+<annotation>
+	<folder>do_boxingu_jutro_na_ASO</folder>
+	<filename>cola_25.jpg</filename>
+	<path>C:\Users\sandr\Desktop\do_boxingu_jutro_na_ASO\cola_25.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3024</width>
+		<height>4032</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>673</xmin>
+			<ymin>1177</ymin>
+			<xmax>1437</xmax>
+			<ymax>3568</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1514</xmin>
+			<ymin>1145</ymin>
+			<xmax>2200</xmax>
+			<ymax>3490</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>2418</xmin>
+			<ymin>1104</ymin>
+			<xmax>2941</xmax>
+			<ymax>2863</ymax>
+		</bndbox>
+	</object>
+</annotation>
