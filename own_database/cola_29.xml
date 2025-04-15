@@ -1,13 +1,7 @@
 <annotation>
-<<<<<<< HEAD
-	<folder>own_database</folder>
-	<filename>cola_29.jpg</filename>
-	<path>C:\Users\aceli\Desktop\PROJEKT ASO\ASO_CV\own_database\cola_29.jpg</path>
-=======
 	<folder>do_boxingu_jutro_na_ASO</folder>
 	<filename>cola_29.jpg</filename>
 	<path>C:\Users\sandr\Desktop\do_boxingu_jutro_na_ASO\cola_29.jpg</path>
->>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -23,77 +17,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-<<<<<<< HEAD
-			<xmin>3</xmin>
-			<ymin>1157</ymin>
-			<xmax>427</xmax>
-			<ymax>2957</ymax>
-		</bndbox>
-	</object>
-	<object>
-		<name>Coca Cola</name>
-		<pose>Unspecified</pose>
-		<truncated>0</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>279</xmin>
-			<ymin>1099</ymin>
-			<xmax>910</xmax>
-			<ymax>3164</ymax>
-		</bndbox>
-	</object>
-	<object>
-		<name>Coca Cola</name>
-		<pose>Unspecified</pose>
-		<truncated>0</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>844</xmin>
-			<ymin>992</ymin>
-			<xmax>1548</xmax>
-			<ymax>3523</ymax>
-		</bndbox>
-	</object>
-	<object>
-		<name>Coca Cola</name>
-		<pose>Unspecified</pose>
-		<truncated>0</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>1375</xmin>
-			<ymin>1064</ymin>
-			<xmax>1872</xmax>
-			<ymax>3161</ymax>
-		</bndbox>
-	</object>
-	<object>
-		<name>Coca Cola</name>
-		<pose>Unspecified</pose>
-		<truncated>0</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>1948</xmin>
-			<ymin>1040</ymin>
-			<xmax>2458</xmax>
-			<ymax>3061</ymax>
-		</bndbox>
-	</object>
-	<object>
-		<name>Coca Cola</name>
-		<pose>Unspecified</pose>
-		<truncated>1</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>2455</xmin>
-			<ymin>1023</ymin>
-			<xmax>3024</xmax>
-			<ymax>3263</ymax>
-=======
 			<xmin>1141</xmin>
 			<ymin>1059</ymin>
 			<xmax>2000</xmax>
 			<ymax>3336</ymax>
->>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 		</bndbox>
 	</object>
 </annotation>

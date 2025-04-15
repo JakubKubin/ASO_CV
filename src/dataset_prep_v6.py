@@ -217,7 +217,7 @@ def download_datasets(config=None):
         train_dataset, val_dataset = split_dataset(joint_dataset_filtered, val_split=config.val_split)
 
         # train_dataset.persistent = True
-        session = fo.launch_app(train_dataset, port=5151)
+        # session = fo.launch_app(train_dataset, port=5151)
 
         # 6. Konwertujemy dane do formatu COCO
         convert_to_coco_format(train_dataset, config.train_images_dir, config.train_annotations_path)
@@ -1214,6 +1214,7 @@ def create_data_loaders_with_custom(config=None, input_size=224, batch_size=8, n
                 transform=get_transform(train=False, input_size=input_size),
                 augment=False
             )
+            session = fo.launch_app(custom_dataset_fo, port=5151)
 
             # Create DataLoader
             custom_loader = DataLoader(

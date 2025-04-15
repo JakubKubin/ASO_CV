@@ -1,13 +1,7 @@
 <annotation>
-<<<<<<< HEAD
-	<folder>own_database</folder>
-	<filename>cola_26.jpg</filename>
-	<path>C:\Users\aceli\Desktop\PROJEKT ASO\ASO_CV\own_database\cola_26.jpg</path>
-=======
 	<folder>do_boxingu_jutro_na_ASO</folder>
 	<filename>cola_26.jpg</filename>
 	<path>C:\Users\sandr\Desktop\do_boxingu_jutro_na_ASO\cola_26.jpg</path>
->>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -23,89 +17,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-<<<<<<< HEAD
-			<xmin>3</xmin>
-			<ymin>1274</ymin>
-			<xmax>272</xmax>
-			<ymax>3336</ymax>
-		</bndbox>
-	</object>
-	<object>
-		<name>Coca Cola</name>
-		<pose>Unspecified</pose>
-		<truncated>0</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>113</xmin>
-			<ymin>1171</ymin>
-			<xmax>837</xmax>
-			<ymax>3495</ymax>
-		</bndbox>
-	</object>
-	<object>
-		<name>Coca Cola</name>
-		<pose>Unspecified</pose>
-		<truncated>0</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>765</xmin>
-			<ymin>1167</ymin>
-			<xmax>1375</xmax>
-			<ymax>3295</ymax>
-		</bndbox>
-	</object>
-	<object>
-		<name>Coca Cola</name>
-		<pose>Unspecified</pose>
-		<truncated>0</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>1362</xmin>
-			<ymin>1130</ymin>
-			<xmax>1941</xmax>
-			<ymax>3388</ymax>
-		</bndbox>
-	</object>
-	<object>
-		<name>Coca Cola</name>
-		<pose>Unspecified</pose>
-		<truncated>0</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>1941</xmin>
-			<ymin>1092</ymin>
-			<xmax>2534</xmax>
-			<ymax>3364</ymax>
-		</bndbox>
-	</object>
-	<object>
-		<name>Coca Cola</name>
-		<pose>Unspecified</pose>
-		<truncated>0</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>2555</xmin>
-			<ymin>1116</ymin>
-			<xmax>2927</xmax>
-			<ymax>3023</ymax>
-		</bndbox>
-	</object>
-	<object>
-		<name>Coca Cola</name>
-		<pose>Unspecified</pose>
-		<truncated>1</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>2927</xmin>
-			<ymin>1602</ymin>
-			<xmax>3024</xmax>
-			<ymax>2299</ymax>
-=======
 			<xmin>1014</xmin>
 			<ymin>1304</ymin>
 			<xmax>1709</xmax>
 			<ymax>3613</ymax>
->>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 		</bndbox>
 	</object>
 </annotation>

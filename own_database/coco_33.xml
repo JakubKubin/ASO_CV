@@ -1,13 +1,7 @@
 <annotation>
-<<<<<<< HEAD
-	<folder>own_database</folder>
-	<filename>coco_33.jpg</filename>
-	<path>C:\Users\aceli\Desktop\PROJEKT ASO\ASO_CV\own_database\coco_33.jpg</path>
-=======
 	<folder>do_boxingu_jutro_na_ASO</folder>
 	<filename>coco_33.jpg</filename>
 	<path>C:\Users\sandr\Desktop\do_boxingu_jutro_na_ASO\coco_33.jpg</path>
->>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -23,12 +17,6 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-<<<<<<< HEAD
-			<xmin>765</xmin>
-			<ymin>1047</ymin>
-			<xmax>1775</xmax>
-			<ymax>3354</ymax>
-=======
 			<xmin>287</xmin>
 			<ymin>1372</ymin>
 			<xmax>1105</xmax>
@@ -45,7 +33,6 @@
 			<ymin>1327</ymin>
 			<xmax>1991</xmax>
 			<ymax>3136</ymax>
->>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 		</bndbox>
 	</object>
 </annotation>
