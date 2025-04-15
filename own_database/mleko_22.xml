@@ -1,7 +1,13 @@
 <annotation>
+<<<<<<< HEAD
 	<folder>own_database</folder>
 	<filename>mleko_22.jpg</filename>
 	<path>C:\Users\aceli\Desktop\PROJEKT ASO\ASO_CV\own_database\mleko_22.jpg</path>
+=======
+	<folder>do_boxingu_jutro_na_ASO</folder>
+	<filename>mleko_22.jpg</filename>
+	<path>C:\Users\sandr\Desktop\do_boxingu_jutro_na_ASO\mleko_22.jpg</path>
+>>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -17,10 +23,29 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
+<<<<<<< HEAD
 			<xmin>1020</xmin>
 			<ymin>1009</ymin>
 			<xmax>2006</xmax>
 			<ymax>3123</ymax>
+=======
+			<xmin>641</xmin>
+			<ymin>1677</ymin>
+			<xmax>1578</xmax>
+			<ymax>3268</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Milk</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1550</xmin>
+			<ymin>1622</ymin>
+			<xmax>2341</xmax>
+			<ymax>3263</ymax>
+>>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 		</bndbox>
 	</object>
 </annotation>

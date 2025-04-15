@@ -1,7 +1,13 @@
 <annotation>
+<<<<<<< HEAD
 	<folder>own_database</folder>
 	<filename>cola_25.jpg</filename>
 	<path>C:\Users\aceli\Desktop\PROJEKT ASO\ASO_CV\own_database\cola_25.jpg</path>
+=======
+	<folder>do_boxingu_jutro_na_ASO</folder>
+	<filename>cola_25.jpg</filename>
+	<path>C:\Users\sandr\Desktop\do_boxingu_jutro_na_ASO\cola_25.jpg</path>
+>>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -17,10 +23,17 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
+<<<<<<< HEAD
 			<xmin>6</xmin>
 			<ymin>795</ymin>
 			<xmax>310</xmax>
 			<ymax>3002</ymax>
+=======
+			<xmin>673</xmin>
+			<ymin>1177</ymin>
+			<xmax>1437</xmax>
+			<ymax>3568</ymax>
+>>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 		</bndbox>
 	</object>
 	<object>
@@ -29,10 +42,17 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
+<<<<<<< HEAD
 			<xmin>134</xmin>
 			<ymin>761</ymin>
 			<xmax>872</xmax>
 			<ymax>3205</ymax>
+=======
+			<xmin>1514</xmin>
+			<ymin>1145</ymin>
+			<xmax>2200</xmax>
+			<ymax>3490</ymax>
+>>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 		</bndbox>
 	</object>
 	<object>
@@ -41,6 +61,7 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
+<<<<<<< HEAD
 			<xmin>693</xmin>
 			<ymin>685</ymin>
 			<xmax>1317</xmax>
@@ -81,6 +102,12 @@
 			<ymin>719</ymin>
 			<xmax>3024</xmax>
 			<ymax>2956</ymax>
+=======
+			<xmin>2418</xmin>
+			<ymin>1104</ymin>
+			<xmax>2941</xmax>
+			<ymax>2863</ymax>
+>>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 		</bndbox>
 	</object>
 </annotation>

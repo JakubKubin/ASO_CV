@@ -1,7 +1,13 @@
 <annotation>
+<<<<<<< HEAD
 	<folder>own_database</folder>
 	<filename>coco_31.jpg</filename>
 	<path>C:\Users\aceli\Desktop\PROJEKT ASO\ASO_CV\own_database\coco_31.jpg</path>
+=======
+	<folder>do_boxingu_jutro_na_ASO</folder>
+	<filename>coco_31.jpg</filename>
+	<path>C:\Users\sandr\Desktop\do_boxingu_jutro_na_ASO\coco_31.jpg</path>
+>>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -17,10 +23,41 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
+<<<<<<< HEAD
 			<xmin>824</xmin>
 			<ymin>399</ymin>
 			<xmax>2120</xmax>
 			<ymax>2926</ymax>
+=======
+			<xmin>928</xmin>
+			<ymin>2118</ymin>
+			<xmax>1250</xmax>
+			<ymax>2590</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>cocolino</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1318</xmin>
+			<ymin>2663</ymin>
+			<xmax>1587</xmax>
+			<ymax>3068</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>cocolino</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1596</xmin>
+			<ymin>2763</ymin>
+			<xmax>1887</xmax>
+			<ymax>3204</ymax>
+>>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 		</bndbox>
 	</object>
 </annotation>

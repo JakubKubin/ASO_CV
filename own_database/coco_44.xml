@@ -1,0 +1,26 @@
+<annotation>
+	<folder>do_boxingu_jutro_na_ASO</folder>
+	<filename>coco_44.jpg</filename>
+	<path>C:\Users\sandr\Desktop\do_boxingu_jutro_na_ASO\coco_44.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3024</width>
+		<height>4032</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>cocolino</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1100</xmin>
+			<ymin>1590</ymin>
+			<xmax>1555</xmax>
+			<ymax>2959</ymax>
+		</bndbox>
+	</object>
+</annotation>

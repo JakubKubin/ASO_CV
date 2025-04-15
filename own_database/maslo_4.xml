@@ -1,7 +1,13 @@
 <annotation>
+<<<<<<< HEAD
 	<folder>own_database</folder>
 	<filename>maslo_4.jpg</filename>
 	<path>C:\Users\aceli\Desktop\PROJEKT ASO\ASO_CV\own_database\maslo_4.jpg</path>
+=======
+	<folder>do_boxingu_jutro_na_ASO</folder>
+	<filename>maslo_4.jpg</filename>
+	<path>C:\Users\sandr\Desktop\do_boxingu_jutro_na_ASO\maslo_4.jpg</path>
+>>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -17,10 +23,17 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
+<<<<<<< HEAD
 			<xmin>492</xmin>
 			<ymin>1878</ymin>
 			<xmax>1499</xmax>
 			<ymax>2212</ymax>
+=======
+			<xmin>1018</xmin>
+			<ymin>918</ymin>
+			<xmax>1864</xmax>
+			<ymax>1400</ymax>
+>>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 		</bndbox>
 	</object>
 	<object>
@@ -29,6 +42,7 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
+<<<<<<< HEAD
 			<xmin>1506</xmin>
 			<ymin>1902</ymin>
 			<xmax>2554</xmax>
@@ -93,6 +107,12 @@
 			<ymin>2216</ymin>
 			<xmax>2720</xmax>
 			<ymax>2702</ymax>
+=======
+			<xmin>1300</xmin>
+			<ymin>1413</ymin>
+			<xmax>2305</xmax>
+			<ymax>2404</ymax>
+>>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 		</bndbox>
 	</object>
 </annotation>

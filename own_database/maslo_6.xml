@@ -1,7 +1,13 @@
 <annotation>
+<<<<<<< HEAD
 	<folder>own_database</folder>
 	<filename>maslo_6.jpg</filename>
 	<path>C:\Users\aceli\Desktop\PROJEKT ASO\ASO_CV\own_database\maslo_6.jpg</path>
+=======
+	<folder>do_boxingu_jutro_na_ASO</folder>
+	<filename>maslo_6.jpg</filename>
+	<path>C:\Users\sandr\Desktop\do_boxingu_jutro_na_ASO\maslo_6.jpg</path>
+>>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -14,6 +20,7 @@
 	<object>
 		<name>Butter</name>
 		<pose>Unspecified</pose>
+<<<<<<< HEAD
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
@@ -21,6 +28,63 @@
 			<ymin>1947</ymin>
 			<xmax>2068</xmax>
 			<ymax>3330</ymax>
+=======
+		<truncated>1</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>2082</xmin>
+			<ymin>1977</ymin>
+			<xmax>3024</xmax>
+			<ymax>2760</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Butter</name>
+		<pose>Unspecified</pose>
+		<truncated>1</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>2050</xmin>
+			<ymin>2631</ymin>
+			<xmax>3024</xmax>
+			<ymax>3542</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Butter</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>14</xmin>
+			<ymin>1213</ymin>
+			<xmax>1073</xmax>
+			<ymax>2231</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Butter</name>
+		<pose>Unspecified</pose>
+		<truncated>1</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1</xmin>
+			<ymin>2100</ymin>
+			<xmax>768</xmax>
+			<ymax>2881</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Butter</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>559</xmin>
+			<ymin>2236</ymin>
+			<xmax>1928</xmax>
+			<ymax>3572</ymax>
+>>>>>>> 99fe0c08865bc4d676e287cff68ecf0060b94f17
 		</bndbox>
 	</object>
 </annotation>
