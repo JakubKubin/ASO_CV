@@ -1,0 +1,26 @@
+<annotation>
+	<folder>do_boxingu_jutro_na_ASO</folder>
+	<filename>maslo_7.jpg</filename>
+	<path>C:\Users\sandr\Desktop\do_boxingu_jutro_na_ASO\maslo_7.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3024</width>
+		<height>4032</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Butter</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>550</xmin>
+			<ymin>1713</ymin>
+			<xmax>2568</xmax>
+			<ymax>3309</ymax>
+		</bndbox>
+	</object>
+</annotation>
