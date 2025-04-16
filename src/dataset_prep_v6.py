@@ -83,16 +83,14 @@ class DatasetConfig:
                  coco_max_samples=300,
                  val_split=0.2,
                  min_box_area=100,  # Minimum bounding box area in pixels
-                 min_samples_per_class=20,
                  seed=42,
-                 cache_data=False,
+                 cache_data=True,
                  num_workers=4):
         self.data_dir = data_dir
         self.openimages_max_samples = openimages_max_samples
         self.coco_max_samples = coco_max_samples
         self.val_split = val_split
         self.min_box_area = min_box_area
-        self.min_samples_per_class = min_samples_per_class
         self.seed = seed
         self.cache_data = cache_data
         self.num_workers = num_workers
@@ -137,7 +135,7 @@ def download_datasets(config=None):
                 cache_info = json.load(f)
 
             # Verify annotations exist
-            if (os.path.exists(config.train_annotations_path) and 
+            if (os.path.exists(config.train_annotations_path) and
                 os.path.exists(config.val_annotations_path)):
 
                 # Check if images exist
@@ -349,13 +347,7 @@ def validate_and_filter_dataset(dataset, config):
                 class_counts[label] = 0
             class_counts[label] += 1
 
-    logger.info(f"Class distribution after filtering: {class_counts}")
-
-    # Check if we have enough samples per class
-    for class_name in CLASSES[1:]:  # Skip background
-        if class_name not in class_counts or class_counts[class_name] < config.min_samples_per_class:
-            logger.warning(f"Class {class_name} has only {class_counts.get(class_name, 0)} samples, "
-                         f"which is less than the minimum {config.min_samples_per_class}")
+    logger.debug(f"Class distribution after filtering: {class_counts}")
 
     return filtered_dataset
 
@@ -1116,10 +1108,11 @@ def validate_custom_dataset(dataset, config=None):
     # Check for expected classes
     class_counts = {}
     unexpected_classes = set()
+    err_samp = 0
 
     for sample in dataset:
         if not hasattr(sample, 'ground_truth') or not hasattr(sample.ground_truth, 'detections'):
-            logger.warning(f"Sample {sample.id} does not have ground truth detections")
+            logger.debug(f"Sample {sample.id} does not have ground truth detections")
             continue
 
         for detection in sample.ground_truth.detections:
