@@ -1,0 +1,26 @@
+<annotation>
+	<folder>rotated</folder>
+	<filename>cola_51.jpg</filename>
+	<path>C:\Users\sandr\Desktop\nowe_foty\jpg\rotated\cola_51.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3024</width>
+		<height>4032</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>905</xmin>
+			<ymin>800</ymin>
+			<xmax>2000</xmax>
+			<ymax>3840</ymax>
+		</bndbox>
+	</object>
+</annotation>
