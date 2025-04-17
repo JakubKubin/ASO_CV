@@ -1,0 +1,26 @@
+<annotation>
+	<folder>rotated</folder>
+	<filename>maslo_38.jpg</filename>
+	<path>C:\Users\sandr\Desktop\nowe_foty\jpg\rotated\maslo_38.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3024</width>
+		<height>4032</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Butter</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>487</xmin>
+			<ymin>1300</ymin>
+			<xmax>2523</xmax>
+			<ymax>2968</ymax>
+		</bndbox>
+	</object>
+</annotation>
