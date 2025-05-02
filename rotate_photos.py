@@ -30,6 +30,7 @@ def rotate_image(image):
                 image = image.rotate(270, expand=True)
             elif orientation == 8:
                 image = image.rotate(90, expand=True)
+
     return image
 
 def process_folder(folder_path):
@@ -38,30 +39,30 @@ def process_folder(folder_path):
     rotating them based on their EXIF Orientation data,
     and saves the rotated images in a 'rotated' subfolder.
     """
-    # Create a subfolder named "rotated" to save the output images.
-    rotated_folder = os.path.join(folder_path, "rotated")
-    if not os.path.exists(rotated_folder):
-        os.makedirs(rotated_folder)
-    
+
+    rotated_dir = os.path.join(folder_path, "rotated")
+    if not os.path.exists(rotated_dir):
+        os.makedirs(rotated_dir)
+
     # Loop over all files in the folder
     for filename in os.listdir(folder_path):
         if filename.lower().endswith(('.jpg', '.jpeg')):
             file_path = os.path.join(folder_path, filename)
             try:
                 with Image.open(file_path) as img:
-                    # Rotate the image based on its EXIF orientation tag.
+                    # Rotate the image based on its EXIF orientation tag
                     rotated_img = rotate_image(img)
-                    # Save the rotated image in the new folder with the same filename.
-                    save_path = os.path.join(rotated_folder, filename)
+                    # Save the rotated image
+                    save_path = os.path.join(rotated_dir, filename)
                     rotated_img.save(save_path)
                     print(f"Processed: {filename}")
             except Exception as e:
                 print(f"Error processing {filename}: {e}")
 
 if __name__ == "__main__":
-    # Ask the user for the folder path containing the photos
-    folder_path = input("Enter the folder path containing your photos: ").strip()
-    if os.path.isdir(folder_path):
-        process_folder(folder_path)
+
+    folder_dir = input("Enter the folder path containing your photos: ").strip()
+    if os.path.isdir(folder_dir):
+        process_folder(folder_dir)
     else:
         print("The folder path provided does not exist. Please check and try again.")

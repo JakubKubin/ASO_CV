@@ -214,9 +214,6 @@ def voc_to_coco(
             coco["images"].append(image_info)
 
             for ann in annotations:
-                # Find the category name for this annotation
-                # Since we don't track which category each annotation belongs to in parse_voc_annotation,
-                # we need to correct this here
                 if cats:  # Only proceed if we have categories for this image
                     category_name = cats[0]  # Use the first category as a fallback
                     ann["category_id"] = categories.get(category_name, 0)
@@ -250,7 +247,7 @@ def get_default_paths():
     return default_voc_dir, default_output
 
 def main():
-    # Get default paths
+
     default_voc_dir, default_output = get_default_paths()
 
     parser = argparse.ArgumentParser(description="Convert VOC XML annotations to COCO JSON format")
@@ -264,7 +261,7 @@ def main():
 
     args = parser.parse_args()
 
-    # Ensure default directories exist
+    # Ensure directories exist
     Path(args.voc_dir).mkdir(parents=True, exist_ok=True)
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
 

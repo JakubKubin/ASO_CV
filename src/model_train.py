@@ -5,7 +5,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from dataset_pipeline import DatasetConfig, get_dataloaders
-from dataset_pipeline import CLASSES, collate_fn
+from dataset_pipeline import CLASSES
 from model_implementation import initialize_model, save_model
 
 def _train_one_epoch(model, optimizer, loader, device, epoch, print_freq=20):
@@ -53,7 +53,7 @@ def _evaluate(model, loader, device):
         model.eval()
     return total / len(loader)
 
-# -----------------------------------------------------------------------------
+
 def train(cfg: DatasetConfig,
           model_type="faster_rcnn",
           epochs=10,
@@ -69,8 +69,6 @@ def train(cfg: DatasetConfig,
     model.to(device)
 
     train_dl, val_dl = get_dataloaders(cfg)
-    # przekazujemy własny collate_fn do DataLoader‑ów już w pipeline,
-    # tu nie musimy go nadpisywać.
 
     params = [p for p in model.parameters() if p.requires_grad]
     optim  = torch.optim.SGD(params, lr=lr, momentum=0.9, weight_decay=wd)
@@ -94,18 +92,18 @@ def train(cfg: DatasetConfig,
         if (ep+1) % 5 == 0 or ep == epochs-1:
             save_model(model, os.path.join(outdir, f"{model_type}_e{ep+1}.pth"))
 
-    # zapisz historię
+
     with open(os.path.join(outdir, "history.json"), "w") as f:
         json.dump(history, f, indent=2)
 
     return model, history
 
-# -----------------------------------------------------------------------------
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", choices=["faster_rcnn", "mask_rcnn"], default="faster_rcnn")
     parser.add_argument("--epochs", type=int, default=20)
     args = parser.parse_args()
 
-    cfg = DatasetConfig()              # można podmienić parametry
+    cfg = DatasetConfig(cache=False)
     train(cfg, args.model, epochs=args.epochs)

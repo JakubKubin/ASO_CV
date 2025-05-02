@@ -94,11 +94,8 @@ class DatasetConfig:
 def get_dataloaders(cfg: DatasetConfig = DatasetConfig()
                    ) -> tuple[DataLoader, DataLoader]:
     """Preferred entry – returns (train_loader, val_loader)."""
-    return build_loaders(cfg)
+    return build_loaders(cfg, batch=cfg.batch_size)
 
-# -----------------------------------------------------------------------------
-# 3. Label sets and mappings
-# -----------------------------------------------------------------------------
 CLASSES = [
     "__background__",
     "Coca Cola",
@@ -132,95 +129,6 @@ def _src_to_dst(label: str) -> str | None:
     if label in CLASSES:
         return label
     return None
-
-
-def download_datasets(config: DatasetConfig) -> Tuple[fo.Dataset, fo.Dataset]:
-    """Download OPEN-IMAGES & COCO subsets, cache the processed splits."""
-
-    logger.info("Checking cache ...")
-    cache_file = Path(config.cache_dir) / f"datasets_{config.cache_hash}.json"
-    if config.cache and cache_file.exists():
-        with open(cache_file) as fh:
-            meta = json.load(fh)
-
-        # quick integrity check
-        train_ok = Path(config.train_annotations_path).exists() and len(os.listdir(config.train_images_dir)) >= meta["train_imgs"]
-        val_ok = Path(config.val_annotations_path).exists() and len(os.listdir(config.val_images_dir)) >= meta["val_imgs"]
-        if train_ok and val_ok:
-            logger.info("Cache hit - loading FiftyOne datasets from JSON ...")
-            return (
-                fo.Dataset.from_json(meta["train_ds"]),
-                fo.Dataset.from_json(meta["val_ds"]),
-            )
-        logger.warning("Cache present but failed integrity check → rebuilding ...")
-
-    # no (valid) cache -- create from scratch
-    np.random.seed(config.seed)
-    random.seed(config.seed)
-    torch.manual_seed(config.seed)
-
-    temp_prefix = f"tmp_grocery_{int(time.time())}"
-    try:
-        # Open-Images
-        oi_classes = list(OPENIMAGES_MAPPING.keys())
-        logger.info(f"Downloading Open-Images subset: {oi_classes}")
-        ds_oi = foz.load_zoo_dataset(
-            "open-images-v7",
-            split="train",
-            classes=oi_classes,
-            label_types=["detections"],
-            max_samples=config.openimages_max,
-            dataset_name=f"{temp_prefix}_oi",
-            seed=config.seed,
-        )
-
-        # COCO
-        coco_classes = list(COCO_MAPPING.keys())
-        logger.info(f"Downloading COCO subset: {coco_classes}")
-        ds_coco = foz.load_zoo_dataset(
-            "coco-2017",
-            split="train",
-            classes=coco_classes,
-            label_types=["detections"],
-            max_samples=config.coco_max,
-            dataset_name=f"{temp_prefix}_coco",
-            seed=config.seed,
-        )
-
-        # merge
-        joint = ds_oi.clone(f"{temp_prefix}_joint")
-        joint.merge_samples(ds_coco)
-        logger.info(f"Merged dataset size: {len(joint)}")
-
-        mapped = map_dataset_labels(joint)
-        filtered = validate_and_filter_dataset(mapped, config)
-        train_ds, val_ds = split_dataset(filtered, config.val_split)
-
-        # export to COCO + copy images
-        convert_to_coco_format(train_ds, config.train_images_dir, config.train_annotations_path, config)
-        convert_to_coco_format(val_ds, config.val_images_dir, config.val_annotations_path, config)
-
-        if config.cache:
-            logger.info("Saving cache metadata ...")
-            meta = {
-                "train_imgs": len(train_ds),
-                "val_imgs": len(val_ds),
-                "train_ds": str(Path(config.cache_dir) / f"train_{config.cache_hash}.json"),
-                "val_ds": str(Path(config.cache_dir) / f"val_{config.cache_hash}.json"),
-            }
-            train_ds.export(meta["train_ds"], fo.types.FiftyOneDataset)
-            val_ds.export(meta["val_ds"], fo.types.FiftyOneDataset)
-            with open(cache_file, "w") as fh:
-                json.dump(meta, fh)
-
-        return train_ds, val_ds
-
-    finally:
-        # cleanup tmp FO datasets (best-effort)
-        for name in fo.list_datasets():
-            if name.startswith(temp_prefix):
-                fo.delete_dataset(name)
-
 
 
 def load_custom_dataset(config: DatasetConfig = None) -> fo.Dataset | None:
@@ -353,13 +261,7 @@ def prepare_dataset(config: DatasetConfig) -> Tuple[fo.Dataset, fo.Dataset]:
     return train_ds, val_ds
 
 
-# -----------------------------------------------------------------------------
-# 6. Filtering, mapping, splitting helpers
-# -----------------------------------------------------------------------------
-
-
 def map_dataset_labels(dataset: fo.Dataset) -> fo.Dataset:
-    # Clone to avoid overwriting the original
     mapped = dataset.clone()
 
     stats = {cls: 0 for cls in CLASSES[1:]}
@@ -436,10 +338,6 @@ def split_dataset(ds: fo.Dataset, val_split: float) -> Tuple[fo.Dataset, fo.Data
     val_size = max(1, int(len(ids) * val_split))
     val_ids = set(ids[:val_size])
     return ds.select(list(set(ids) - val_ids)), ds.select(list(val_ids))
-
-# -----------------------------------------------------------------------------
-# 7. COCO export
-# -----------------------------------------------------------------------------
 
 
 def _copy_image(src_dst: Tuple[str, str]):
@@ -525,9 +423,6 @@ def convert_to_coco_format(ds: fo.Dataset, img_dir: str, json_path: str, cfg: Da
         json.dump(coco, fh)
     logger.info(f"Wrote COCO file {json_path} with {len(coco['annotations'])} annotations")
 
-# -----------------------------------------------------------------------------
-# 8. Torch Dataset & transforms
-# -----------------------------------------------------------------------------
 
 class Resize:
     """Resize image and bbox to square *size* without in-place edits."""
@@ -606,13 +501,11 @@ class GroceryDataset(Dataset):
 
             bbox = [xmin, ymin, xmin + width_box, ymin + height_box]
 
-            # Verify bbox is within image bounds
             bbox[0] = max(0, bbox[0])
             bbox[1] = max(0, bbox[1])
             bbox[2] = min(width, bbox[2])
             bbox[3] = min(height, bbox[3])
 
-            # Skip boxes that are too small or invalid after adjustment
             if bbox[2] <= bbox[0] or bbox[3] <= bbox[1]:
                 continue
 
@@ -642,25 +535,14 @@ class GroceryDataset(Dataset):
         return len(self.ids)
 
 
-# -----------------------------------------------------------------------------
-# 9. Dataloaders
-# -----------------------------------------------------------------------------
-
 def collate_fn(batch: List[Tuple[torch.Tensor, dict[str, Any]]]):
-    images, targets = zip(*batch)
-    return list(images), list(targets)  # CHANGE: list – no stack
+    imgs, tgts = zip(*batch)
+    return list(imgs), list(tgts)
 
 
 def build_loaders(config: DatasetConfig,
                   batch: int | None = None,
                  ) -> tuple[DataLoader, DataLoader]:
-    """Create train and validation data loaders"""
-
-    if batch is None:
-        batch = config.batch_size
-
-    # train_ds_fo, val_ds_fo = download_datasets(cfg)
-    train_ds_fo, val_ds_fo = prepare_dataset(config)
 
     train_dataset = GroceryDataset(
         root        = config.train_images_dir,
@@ -676,7 +558,8 @@ def build_loaders(config: DatasetConfig,
         augment     = False
     )
 
-    train_ld = DataLoader(dataset=train_dataset,
+    train_ld = DataLoader(
+        dataset     = train_dataset,
         batch_size  = batch,
         shuffle     = True,
         num_workers = config.num_workers,
@@ -684,7 +567,7 @@ def build_loaders(config: DatasetConfig,
         pin_memory  = True
     )
 
-    val_ld   = DataLoader(
+    val_ld = DataLoader(
         dataset     = val_dataset,
         batch_size  = batch,
         shuffle     = False,
@@ -696,7 +579,7 @@ def build_loaders(config: DatasetConfig,
     return train_ld, val_ld
 
 
-def create_data_loaders(*,                       # keyword-only on purpose
+def create_data_loaders(*,
                         config     : DatasetConfig | None = None,
                         input_size : int | None = None,
                         batch_size : int | None = None,
@@ -716,15 +599,12 @@ def create_data_loaders(*,                       # keyword-only on purpose
 
     return build_loaders(config, batch=config.batch_size)
 
-# -----------------------------------------------------------------------------
-# 10. Entry point (debug)
-# -----------------------------------------------------------------------------
-
 
 def main():
     cfg = DatasetConfig(cache=False)
 
-    # You can also create PyTorch dataloaders if needed
+    train_ds_fo, val_ds_fo = prepare_dataset(config=cfg)
+
     train_ld, val_ld = create_data_loaders(config=cfg)
     logger.info(f"Train/val sizes: {len(train_ld.dataset)}/{len(val_ld.dataset)}")
 
