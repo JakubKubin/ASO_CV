@@ -1,10 +1,3 @@
-"""
-Updated grocery dataset pipeline
-================================
-All critical fixes requested by the user are implemented.  Search in the code for the tag
-`# CHANGE:` to quickly locate each modification.
-"""
-
 from __future__ import annotations
 
 import hashlib
@@ -41,7 +34,7 @@ logger.setLevel(logging.INFO)
 
 # CHANGE: use rotating file handler to avoid unbounded log size
 from logging.handlers import RotatingFileHandler
-file_handler = RotatingFileHandler("dataset_preparation.log", maxBytes=5 * 1024 ** 2, backupCount=3, encoding="utf-8")
+file_handler = RotatingFileHandler("dataset_preparation.log", maxBytes=100 * 1024 ** 2, backupCount=3, encoding="utf-8")
 stream_handler = logging.StreamHandler(sys.stdout)
 for h in (file_handler, stream_handler):
     h.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
@@ -51,18 +44,22 @@ for h in (file_handler, stream_handler):
 # 2. Configuration dataclass
 # -----------------------------------------------------------------------------
 @dataclass
-class DatasetConfig:                                       # CHANGE: dataclass
-    data_dir          : str = "data"
-    openimages_max    : int = 700
-    coco_max          : int = 300
-    val_split         : float = 0.2
-    seed              : int = 42
-    min_box_area      : int = 100
-    cache             : bool = True
-    copy_workers      : int = 8
-    input_size        : int = 640                          # CHANGE: większy rozmiar
-    batch_size        : int = 4
-    num_workers       : int = 4
+class DatasetConfig:
+    data_dir             : str = "data"
+    openimages_max       : int = 700
+    coco_max             : int = 300
+    val_split            : float = 0.2
+    seed                 : int = 42
+    min_box_area         : int = 100
+    cache                : bool = False
+    copy_workers         : int = 8
+    input_size           : int = 640
+    batch_size           : int = 4
+    num_workers          : int = 4
+    custom_ds_data_path  : str = Path(__file__).resolve().parent.parent / "own_database"
+    custom_ds_label_path : str = Path(__file__).resolve().parent.parent / r"own_database\annotations\own_coco.json"
+    use_downloaded       : bool = True
+    use_custom           : bool = True
 
     # wygeneruj hash konfiguracji do cache
     def hash(self) -> str:
@@ -139,6 +136,8 @@ def _src_to_dst(label: str) -> str | None:
         return OPENIMAGES_MAPPING[label]
     if label in COCO_MAPPING:
         return COCO_MAPPING[label]
+    if label in CLASSES:
+        return label
     return None
 
 # -----------------------------------------------------------------------------
@@ -249,37 +248,138 @@ def download_datasets(config: DatasetConfig) -> Tuple[fo.Dataset, fo.Dataset]:
                 fo.delete_dataset(name)
 
 
+
+def load_custom_dataset(config: DatasetConfig = None) -> fo.Dataset | None:
+    logger.info(f"Loading custom dataset from {config.custom_ds_data_path} with annotations {config.custom_ds_label_path}")
+
+    if not os.path.isdir(config.custom_ds_data_path):
+        logger.error(f"Data path {config.custom_ds_data_path} does not exist")
+        return None
+
+    if not os.path.isfile(config.custom_ds_label_path):
+        logger.error(f"Labels file {config.custom_ds_label_path} does not exist")
+        return None
+
+    try:
+        name = f"custom_grocery_{int(time.time())}"
+        ds_custom = fo.Dataset.from_dir(
+            dataset_type=fo.types.COCODetectionDataset,
+            data_path=config.custom_ds_data_path,
+            labels_path=config.custom_ds_label_path,
+            include_id=True,
+            name=name,
+        )
+        logger.info(f"Loaded custom FiftyOne dataset with {len(ds_custom)} samples")
+        validate_custom_dataset(ds_custom)
+        return ds_custom
+    except Exception as e:
+        logger.error(f"Error loading custom dataset: {e}", exc_info=True)
+        return None
+
+
+def validate_custom_dataset(dataset: fo.Dataset):
+
+    class_counts: dict[str,int] = {}
+    unexpected_classes = set()
+
+    for sample in dataset:
+        dets = getattr(sample, "detections", None)
+        if dets is None or not hasattr(dets, "detections"):
+            continue
+        for detection in dets.detections:
+            label = detection.label
+            if label in CLASSES:
+                class_counts[label] = class_counts.get(label, 0) + 1
+            else:
+                unexpected_classes.add(label)
+
+    logger.info(f"Custom class distribution: {class_counts}")
+
+    if unexpected_classes:
+        logger.warning(f"Ignoring unexpected classes: {unexpected_classes}")
+
+    missing_classes = set(CLASSES[1:]) - set(class_counts)
+    if missing_classes:
+        logger.warning(f"Custom dataset is missing expected classes: {missing_classes}")
+
+
+def prepare_dataset(cfg: DatasetConfig) -> Tuple[fo.Dataset, fo.Dataset]:
+    parts: list[fo.Dataset] = []
+
+    if cfg.use_downloaded:
+        train_fo, val_fo = download_datasets(cfg)
+        parts += [train_fo, val_fo]
+
+    if cfg.use_custom:
+        custom_fo = load_custom_dataset(cfg)
+        if custom_fo:
+            parts.append(custom_fo)
+
+    if not parts:
+        raise ValueError("No dataset selected: set use_downloaded or use_custom")
+
+    if len(parts) == 1:
+        joint = parts[0]
+    else:
+        joint = parts[0].clone(f"joint_merged_{int(time.time())}")
+        for ds in parts[1:]:
+            joint.merge_samples(ds)
+
+    mapped_joint = map_dataset_labels(joint)
+    val_mapped_joint = validate_and_filter_dataset(mapped_joint, cfg)
+
+    train_ds, val_ds = split_dataset(val_mapped_joint, cfg.val_split)
+    return train_ds, val_ds
+
+
 # -----------------------------------------------------------------------------
 # 6. Filtering, mapping, splitting helpers
 # -----------------------------------------------------------------------------
 
 
-def map_dataset_labels(ds: fo.Dataset) -> fo.Dataset:
-    """Return clone with labels mapped to project taxonomy."""
+def map_dataset_labels(dataset: fo.Dataset) -> fo.Dataset:
+    # Clone to avoid overwriting the original
+    mapped = dataset.clone()
 
-    mapped = ds.clone()  # deep copy
-    stats: dict[str, int] = {c: 0 for c in CLASSES[1:]}
-    tot_original = 0
-    tot_kept = 0
+    stats = {cls: 0 for cls in CLASSES[1:]}
+    total_original = 0
+    total_mapped   = 0
 
-    for s in tqdm(mapped, desc="Mapping labels"):
-        detections = s.ground_truth.detections
-        tot_original += len(detections)
-        kept: list[Any] = []
-        for det in detections:
-            new_lab = _src_to_dst(det.label)
-            if new_lab and new_lab in CLASSES:
-                det.label = new_lab
-                kept.append(det)
-                stats[new_lab] += 1
-        if kept:
-            s.ground_truth.detections = kept
+    for sample in tqdm(mapped, desc="Mapping labels"):
+        if not sample.has_field("ground_truth"):
+            continue
+        elif sample.ground_truth is None:
+            dets = sample.detections.detections
         else:
-            s.clear_field("ground_truth")  # mark empty
-    mapped = mapped.match(F("ground_truth.detections").length() > 0)
+            dets = sample.ground_truth.detections
 
-    logger.info("Mapping done → kept %.2f%% of detections" % (100 * tot_kept / max(1, tot_original)))
-    logger.debug(f"Distribution: {stats}")
+        total_original += len(dets)
+
+        new_dets = []
+        for d in dets:
+            new_lab = _src_to_dst(d.label)
+            if new_lab in CLASSES:
+                d.label = new_lab
+                new_dets.append(d)
+                stats[new_lab] += 1
+
+        total_mapped += len(new_dets)
+
+        if new_dets:
+            sample["ground_truth"] = fo.Detections(detections=new_dets)
+        elif sample.has_field("ground_truth"):
+            sample.clear_field("ground_truth")
+
+        sample.save()
+
+    logger.info(
+        f"Original dets: {total_original}, "
+        f"Mapped dets: {total_mapped} "
+        f"(ratio {total_mapped}/{total_original})"
+    )
+    logger.info(f"Samples before: {len(dataset)}, after: {len(mapped)}")
+    logger.info(f"Class counts: {stats}")
+
     return mapped
 
 
@@ -335,7 +435,6 @@ def _copy_image(src_dst: Tuple[str, str]):
     dst_dir = os.path.dirname(dst)
     os.makedirs(dst_dir, exist_ok=True)
     try:
-        # fast path — straight copy if already jpeg & RGB
         with Image.open(src) as im:
             if im.mode == "RGB" and src.lower().endswith(".jpg"):
                 shutil.copy(src, dst)
@@ -362,42 +461,47 @@ def convert_to_coco_format(ds: fo.Dataset, img_dir: str, json_path: str, cfg: Da
         "categories": [{"id": i, "name": c, "supercategory": "grocery"} for i, c in enumerate(CLASSES) if c != "__background__"],
     }
 
-    class2id = {c: i for i, c in enumerate(CLASSES) if c != "__background__"}
+    class_name_to_coco_id = {c: i for i, c in enumerate(CLASSES) if c != "__background__"}
 
     copy_jobs: List[Tuple[str, str]] = []
 
-    for idx, s in enumerate(tqdm(ds, desc=f"COCO export → {json_path}")):
-        src = s.filepath
-        fname = f"{idx:06d}.jpg"
-        dst = os.path.join(img_dir, fname)
-        copy_jobs.append((src, dst))
+    for i, sample in enumerate(tqdm(ds, desc=f"COCO export → {json_path}")):
+        src_path = sample.filepath
+        filename = f"{i:06d}.jpg"
+        dst_path = os.path.join(img_dir, filename)
+        copy_jobs.append((src_path, dst_path))
 
-        with Image.open(src) as im:
-            w, h = im.size
+        with Image.open(src_path) as img:
+            width, height = img.size
 
         coco["images"].append({
-            "id": idx,
-            "file_name": fname,
-            "width": w,
-            "height": h,
+            "id": i,
+            "file_name": filename,
+            "width": width,
+            "height": height,
             "license": 1,
-        })
+            "date_captured": time.strftime("%Y-%m-%d %H:%M:%S")
+            })
 
-        for det in s.ground_truth.detections:
-            lab = det.label
-            if lab not in class2id:
+
+        for det in sample.ground_truth.detections:
+            label = det.label
+            if label not in class_name_to_coco_id:
                 continue
             x, y, bw, bh = det.bounding_box
-            x_px, y_px = int(x * w), int(y * h)
-            bw_px, bh_px = int(bw * w), int(bh * h)
+            x_px, y_px = int(x * width), int(y * height)
+            bw_px, bh_px = int(bw * width), int(bh * height)
+
             if bw_px <= 0 or bh_px <= 0:
                 continue
+
             coco["annotations"].append({
                 "id": len(coco["annotations"]),
-                "image_id": idx,
-                "category_id": class2id[lab],
+                "image_id": i,
+                "category_id": class_name_to_coco_id[label],
                 "bbox": [x_px, y_px, bw_px, bh_px],
                 "area": bw_px * bh_px,
+                "segmentation": [[x_px, y_px, x_px + bw_px, y_px, x_px + bw_px, y_px + bh_px, x_px, y_px + bh_px]],
                 "iscrowd": 0,
             })
 
@@ -468,9 +572,9 @@ class GroceryDataset(Dataset):
 
         self.coco_id_to_class_idx = {cid: CLASS_TO_IDX[c["name"]] for cid, c in self.coco.cats.items() if c["name"] in CLASS_TO_IDX}
 
-    def __getitem__(self, idx: int):
+    def __getitem__(self, index: int):
         coco = self.coco
-        img_id = self.ids[idx]
+        img_id = self.ids[index]
         path = os.path.join(self.root, coco.loadImgs(img_id)[0]["file_name"])
         try:
             img = Image.open(path).convert("RGB")
@@ -481,26 +585,47 @@ class GroceryDataset(Dataset):
         anns = coco.loadAnns(ann_ids)
 
         boxes, labels = [], []
-        w, h = img.size
-        for a in anns:
-            x, y, bw, bh = a["bbox"]
-            if bw <= 0 or bh <= 0:
+        width, height = img.size
+
+        for ann in anns:
+            xmin, ymin, width_box, height_box = ann["bbox"]
+
+            if width_box <= 0 or height_box <= 0:
                 continue
-            boxes.append([x, y, x + bw, y + bh])
-            labels.append(self.coco_id_to_class_idx.get(a["category_id"], 0))
+
+            bbox = [xmin, ymin, xmin + width_box, ymin + height_box]
+
+            # Verify bbox is within image bounds
+            bbox[0] = max(0, bbox[0])
+            bbox[1] = max(0, bbox[1])
+            bbox[2] = min(width, bbox[2])
+            bbox[3] = min(height, bbox[3])
+
+            # Skip boxes that are too small or invalid after adjustment
+            if bbox[2] <= bbox[0] or bbox[3] <= bbox[1]:
+                continue
+
+            boxes.append(bbox)
+
+            labels.append(self.coco_id_to_class_idx.get(ann["category_id"], 0))
 
         boxes_t = torch.tensor(boxes, dtype=torch.float32) if boxes else torch.zeros((0, 4), dtype=torch.float32)
-        tgt = {
+        labels_t = torch.tensor(labels, dtype=torch.int64) if labels else torch.zeros((0,), dtype=torch.int64)
+        img_t = torch.tensor([img_id])
+        area = (boxes_t[:, 3] - boxes_t[:, 1]) * (boxes_t[:, 2] - boxes_t[:, 0]) if boxes else torch.zeros((0,))
+
+        target = {
             "boxes": boxes_t,
-            "labels": torch.tensor(labels, dtype=torch.int64) if labels else torch.zeros((0,), dtype=torch.int64),
-            "image_id": torch.tensor([img_id]),
-            "area": (boxes_t[:, 3] - boxes_t[:, 1]) * (boxes_t[:, 2] - boxes_t[:, 0]) if boxes else torch.zeros((0,)),
+            "labels": labels_t,
+            "image_id": img_t,
+            "area": area,
             "iscrowd": torch.zeros((len(labels),), dtype=torch.int64),
         }
 
         if self.transform:
-            img, tgt = self.transform(img, tgt)
-        return img, tgt
+            img, target = self.transform(img, target)
+
+        return img, target
 
     def __len__(self):
         return len(self.ids)
@@ -515,27 +640,48 @@ def collate_fn(batch: List[Tuple[torch.Tensor, dict[str, Any]]]):
     return list(images), list(targets)  # CHANGE: list – no stack
 
 
-def build_loaders(cfg: DatasetConfig, batch: int | None = None
+def build_loaders(config: DatasetConfig,
+                  batch: int | None = None,
                  ) -> tuple[DataLoader, DataLoader]:
-    """Main factory returning train & val DataLoaders."""
+    """Create train and validation data loaders"""
+
     if batch is None:
-        batch = cfg.batch_size
+        batch = config.batch_size
 
-    train_ds_fo, val_ds_fo = download_datasets(cfg)
+    # train_ds_fo, val_ds_fo = download_datasets(cfg)
+    train_ds_fo, val_ds_fo = prepare_dataset(config)
 
-    train_set = GroceryDataset(cfg.train_images_dir,
-                               cfg.train_annotations_path,
-                               get_transform(True, cfg.input_size))
-    val_set   = GroceryDataset(cfg.val_images_dir,
-                               cfg.val_annotations_path,
-                               get_transform(False, cfg.input_size))
+    train_dataset = GroceryDataset(
+        root        = config.train_images_dir,
+        ann_file    = config.train_annotations_path,
+        transform   = get_transform(train=True, size=config.input_size),
+        augment     = True
+    )
 
-    train_ld = DataLoader(train_set, batch_size=batch, shuffle=True,
-                          num_workers=cfg.num_workers, collate_fn=collate_fn,
-                          pin_memory=True)
-    val_ld   = DataLoader(val_set, batch_size=batch, shuffle=False,
-                          num_workers=cfg.num_workers, collate_fn=collate_fn,
-                          pin_memory=True)
+    val_dataset = GroceryDataset(
+        root        = config.val_images_dir,
+        ann_file    = config.val_annotations_path,
+        transform   = get_transform(train=False, size=config.input_size),
+        augment     = False
+    )
+
+    train_ld = DataLoader(dataset=train_dataset,
+        batch_size  = batch,
+        shuffle     = True,
+        num_workers = config.num_workers,
+        collate_fn  = collate_fn,
+        pin_memory  = True
+    )
+
+    val_ld   = DataLoader(
+        dataset     = val_dataset,
+        batch_size  = batch,
+        shuffle     = False,
+        num_workers = config.num_workers,
+        collate_fn  = collate_fn,
+        pin_memory  = True
+    )
+
     return train_ld, val_ld
 
 
@@ -545,18 +691,15 @@ def create_data_loaders(*,                       # keyword‑only on purpose
                         batch_size : int | None = None,
                         num_workers: int | None = None
                        ) -> tuple[DataLoader, DataLoader]:
-    """
-    Thin wrapper kept for backward‑compat.
-    Delegates to `build_loaders`.
-    """
     if config is None:
         config = DatasetConfig()
 
-    # allow runtime overrides
     if input_size is not None:
         config.input_size = input_size
+
     if batch_size is not None:
         config.batch_size = batch_size
+
     if num_workers is not None:
         config.num_workers = num_workers
 
@@ -568,13 +711,11 @@ def create_data_loaders(*,                       # keyword‑only on purpose
 
 
 def main():
-    cfg = DatasetConfig(cache=True)  # force rebuild for demo
-    train_ld, val_ld = create_data_loaders(cfg)
-    logger.info(f"Train/val sizes: {len(train_ld.dataset)}/{len(val_ld.dataset)}")
+    cfg = DatasetConfig(cache=False)
 
-    # optional FO app — guard with env var so CI/headless won’t hang
-    if os.getenv("VISUALIZE") == "1":
-        fo.launch_app(name="grocery_dataset", dataset=train_ld.dataset, port=5151)
+    # You can also create PyTorch dataloaders if needed
+    train_ld, val_ld = create_data_loaders(config=cfg)
+    logger.info(f"Train/val sizes: {len(train_ld.dataset)}/{len(val_ld.dataset)}")
 
     imgs, tgts = next(iter(train_ld))
     logger.info(f"First batch shapes: img={imgs[0].shape}, targets={len(tgts)}")

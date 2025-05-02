@@ -28,15 +28,29 @@ def _train_one_epoch(model, optimizer, loader, device, epoch, print_freq=20):
 
     return running / len(loader)
 
+# def _evaluate(model, loader, device):
+#     model.eval()
+#     total = 0.0
+#     with torch.no_grad():
+#         for imgs, tgts in loader:
+#             imgs = [img.to(device) for img in imgs]
+#             tgts = [{k: v.to(device) for k, v in t.items()} for t in tgts]
+#             loss = sum(model(imgs, tgts).values())
+#             total += loss.item()
+#     return total / len(loader)
+
 def _evaluate(model, loader, device):
-    model.eval()
+    was_training = model.training        # zapamiętaj poprzedni stan
+    model.train()                        # ← potrzebny tryb treningowy!
     total = 0.0
-    with torch.no_grad():
+    with torch.no_grad():               # bez gradientów ≈ eval
         for imgs, tgts in loader:
             imgs = [img.to(device) for img in imgs]
             tgts = [{k: v.to(device) for k, v in t.items()} for t in tgts]
-            loss = sum(model(imgs, tgts).values())
-            total += loss.item()
+            losses = model(imgs, tgts)   # dict
+            total += sum(losses.values()).item()
+    if not was_training:                 # przywróć stan modelu
+        model.eval()
     return total / len(loader)
 
 # -----------------------------------------------------------------------------

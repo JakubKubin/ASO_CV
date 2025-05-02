@@ -1,1 +1,0 @@
-{"train_count": 800, "val_count": 0, "train_dataset_path": "data\\cache\\train_dataset_ada7285fc510edb794175d7c323eebf9.json", "val_dataset_path": "data\\cache\\val_dataset_ada7285fc510edb794175d7c323eebf9.json", "created_at": 1744453765.05195, "config": {"openimages_max_samples": 500, "coco_max_samples": 300, "seed": 42}}

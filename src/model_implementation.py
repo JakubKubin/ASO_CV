@@ -34,7 +34,7 @@ def get_mask_rcnn(num_classes: int = len(CLASSES), pretrained_backbone=True):
     model.roi_heads.mask_predictor = MaskRCNNPredictor(inmask, 256, num_classes)
     return model
 
-def initialize_model(model_type="mask_rcnn",
+def initialize_model(model_type="faster_rcnn",
                      num_classes=len(CLASSES),
                      pretrained_backbone=True):
     if model_type == "faster_rcnn":
