@@ -83,7 +83,7 @@ class DatasetConfig:
         self.val_annotations_path = os.path.join(self.annotations_dir, "instances_val.json")
         self.cache_dir = os.path.join(self.data_dir, "cache")
 
-        # stable hash including all user‑configurable knobs
+        # stable hash including all user-configurable knobs
         cfg_for_hash = json.dumps({
             "oi": self.openimages_max,
             "coco": self.coco_max,
@@ -161,9 +161,9 @@ def _hash_first(items: Iterable[str], n: int = 100) -> str:
 
 
 def download_datasets(config: DatasetConfig) -> Tuple[fo.Dataset, fo.Dataset]:
-    """Download OPEN‑IMAGES & COCO subsets, cache the processed splits."""
+    """Download OPEN-IMAGES & COCO subsets, cache the processed splits."""
 
-    logger.info("Checking cache …")
+    logger.info("Checking cache ...")
     cache_file = Path(config.cache_dir) / f"datasets_{config.cache_hash}.json"
     if config.cache and cache_file.exists():
         with open(cache_file) as fh:
@@ -173,23 +173,23 @@ def download_datasets(config: DatasetConfig) -> Tuple[fo.Dataset, fo.Dataset]:
         train_ok = Path(config.train_annotations_path).exists() and len(os.listdir(config.train_images_dir)) >= meta["train_imgs"]
         val_ok = Path(config.val_annotations_path).exists() and len(os.listdir(config.val_images_dir)) >= meta["val_imgs"]
         if train_ok and val_ok:
-            logger.info("Cache hit — loading FiftyOne datasets from JSON …")
+            logger.info("Cache hit - loading FiftyOne datasets from JSON ...")
             return (
                 fo.Dataset.from_json(meta["train_ds"]),
                 fo.Dataset.from_json(meta["val_ds"]),
             )
-        logger.warning("Cache present but failed integrity check → rebuilding …")
+        logger.warning("Cache present but failed integrity check → rebuilding ...")
 
-    # no (valid) cache —— create from scratch
+    # no (valid) cache -- create from scratch
     np.random.seed(config.seed)
     random.seed(config.seed)
     torch.manual_seed(config.seed)
 
     temp_prefix = f"tmp_grocery_{int(time.time())}"
     try:
-        # Open‑Images
+        # Open-Images
         oi_classes = list(OPENIMAGES_MAPPING.keys())
-        logger.info(f"Downloading Open‑Images subset: {oi_classes}")
+        logger.info(f"Downloading Open-Images subset: {oi_classes}")
         ds_oi = foz.load_zoo_dataset(
             "open-images-v7",
             split="train",
@@ -227,7 +227,7 @@ def download_datasets(config: DatasetConfig) -> Tuple[fo.Dataset, fo.Dataset]:
         convert_to_coco_format(val_ds, config.val_images_dir, config.val_annotations_path, config)
 
         if config.cache:
-            logger.info("Saving cache metadata …")
+            logger.info("Saving cache metadata ...")
             meta = {
                 "train_imgs": len(train_ds),
                 "val_imgs": len(val_ds),
@@ -242,7 +242,7 @@ def download_datasets(config: DatasetConfig) -> Tuple[fo.Dataset, fo.Dataset]:
         return train_ds, val_ds
 
     finally:
-        # cleanup tmp FO datasets (best‑effort)
+        # cleanup tmp FO datasets (best-effort)
         for name in fo.list_datasets():
             if name.startswith(temp_prefix):
                 fo.delete_dataset(name)
@@ -327,8 +327,11 @@ def prepare_dataset(cfg: DatasetConfig) -> Tuple[fo.Dataset, fo.Dataset]:
 
     mapped_joint = map_dataset_labels(joint)
     val_mapped_joint = validate_and_filter_dataset(mapped_joint, cfg)
-
     train_ds, val_ds = split_dataset(val_mapped_joint, cfg.val_split)
+
+    convert_to_coco_format(train_ds, cfg.train_images_dir, cfg.train_annotations_path, cfg)
+    convert_to_coco_format(val_ds, cfg.val_images_dir, cfg.val_annotations_path, cfg)
+
     return train_ds, val_ds
 
 
@@ -506,7 +509,7 @@ def convert_to_coco_format(ds: fo.Dataset, img_dir: str, json_path: str, cfg: Da
             })
 
     # parallel copy
-    logger.info(f"Copying {len(copy_jobs)} images → {img_dir} with {cfg.copy_workers} workers …")
+    logger.info(f"Copying {len(copy_jobs)} images → {img_dir} with {cfg.copy_workers} workers ...")
     with ThreadPoolExecutor(max_workers=cfg.copy_workers) as pool:
         list(tqdm(pool.map(_copy_image, copy_jobs), total=len(copy_jobs), desc="Copy"))
 
@@ -519,7 +522,7 @@ def convert_to_coco_format(ds: fo.Dataset, img_dir: str, json_path: str, cfg: Da
 # -----------------------------------------------------------------------------
 
 class Resize:
-    """Resize image and bbox to square *size* without in‑place edits."""
+    """Resize image and bbox to square *size* without in-place edits."""
 
     def __init__(self, size: int):
         self.size = size
@@ -685,7 +688,7 @@ def build_loaders(config: DatasetConfig,
     return train_ld, val_ld
 
 
-def create_data_loaders(*,                       # keyword‑only on purpose
+def create_data_loaders(*,                       # keyword-only on purpose
                         config     : DatasetConfig | None = None,
                         input_size : int | None = None,
                         batch_size : int | None = None,
