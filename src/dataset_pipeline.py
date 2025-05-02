@@ -61,11 +61,6 @@ class DatasetConfig:
     use_downloaded       : bool = True
     use_custom           : bool = True
 
-    # wygeneruj hash konfiguracji do cache
-    def hash(self) -> str:
-        return hashlib.md5(json.dumps(asdict(self), sort_keys=True).encode()).hexdigest()
-
-    # Those derived fields are excluded from the dataclass comparison/hash
     train_images_dir: str = field(init=False, repr=False)
     val_images_dir: str = field(init=False, repr=False)
     annotations_dir: str = field(init=False, repr=False)
@@ -75,7 +70,6 @@ class DatasetConfig:
     cache_hash: str = field(init=False)
 
     def __post_init__(self):
-        # folder structure
         self.train_images_dir = os.path.join(self.data_dir, "images", "train")
         self.val_images_dir = os.path.join(self.data_dir, "images", "val")
         self.annotations_dir = os.path.join(self.data_dir, "annotations")
@@ -83,11 +77,12 @@ class DatasetConfig:
         self.val_annotations_path = os.path.join(self.annotations_dir, "instances_val.json")
         self.cache_dir = os.path.join(self.data_dir, "cache")
 
-        # stable hash including all user-configurable knobs
         cfg_for_hash = json.dumps({
             "oi": self.openimages_max,
             "coco": self.coco_max,
+            "custom": self.use_custom,
             "seed": self.seed,
+            "split": self.val_split,
             "isize": self.input_size,
         }, sort_keys=True)
         self.cache_hash = hashlib.md5(cfg_for_hash.encode()).hexdigest()
@@ -116,7 +111,6 @@ CLASSES = [
 ]
 CLASS_TO_IDX = {c: i for i, c in enumerate(CLASSES)}
 
-# CHANGE: map "Dairy Product" → "Yogurt" which *is* in CLASSES
 OPENIMAGES_MAPPING = {
     "Wine glass": "Wine glass",
     "Drink": "Drink",
@@ -130,7 +124,6 @@ COCO_MAPPING = {
     "wine glass": "Wine glass",
 }
 
-# helper for mapping
 def _src_to_dst(label: str) -> str | None:
     if label in OPENIMAGES_MAPPING:
         return OPENIMAGES_MAPPING[label]
@@ -139,25 +132,6 @@ def _src_to_dst(label: str) -> str | None:
     if label in CLASSES:
         return label
     return None
-
-# -----------------------------------------------------------------------------
-# 4. Utility functions
-# -----------------------------------------------------------------------------
-
-
-def _hash_first(items: Iterable[str], n: int = 100) -> str:
-    """Return md5 hash of up to *n* strings (for quick cache integrity)."""
-    m = hashlib.md5()
-    for i, it in enumerate(items):
-        if i >= n:
-            break
-        m.update(it.encode())
-    return m.hexdigest()
-
-
-# -----------------------------------------------------------------------------
-# 5. Dataset download/merge/cache pipeline
-# -----------------------------------------------------------------------------
 
 
 def download_datasets(config: DatasetConfig) -> Tuple[fo.Dataset, fo.Dataset]:
@@ -262,16 +236,22 @@ def load_custom_dataset(config: DatasetConfig = None) -> fo.Dataset | None:
 
     try:
         name = f"custom_grocery_{int(time.time())}"
-        ds_custom = fo.Dataset.from_dir(
+        ds = fo.Dataset.from_dir(
             dataset_type=fo.types.COCODetectionDataset,
             data_path=config.custom_ds_data_path,
             labels_path=config.custom_ds_label_path,
             include_id=True,
             name=name,
         )
-        logger.info(f"Loaded custom FiftyOne dataset with {len(ds_custom)} samples")
-        validate_custom_dataset(ds_custom)
-        return ds_custom
+        logger.info(f"Loaded custom dataset with {len(ds)} samples")
+        unexpected = set()
+        for samp in ds:
+            for det in samp.detections.detections:
+                if det.label not in CLASSES:
+                    unexpected.add(det.label)
+        if unexpected:
+            logger.warning(f"Ignoring unexpected classes: {unexpected}")
+        return ds
     except Exception as e:
         logger.error(f"Error loading custom dataset: {e}", exc_info=True)
         return None
@@ -303,34 +283,72 @@ def validate_custom_dataset(dataset: fo.Dataset):
         logger.warning(f"Custom dataset is missing expected classes: {missing_classes}")
 
 
-def prepare_dataset(cfg: DatasetConfig) -> Tuple[fo.Dataset, fo.Dataset]:
-    parts: list[fo.Dataset] = []
+def prepare_dataset(config: DatasetConfig) -> Tuple[fo.Dataset, fo.Dataset]:
+    cache_meta = Path(config.cache_dir) / f"datasets_{config.cache_hash}.json"
+    if config.cache and cache_meta.exists():
+        with open(cache_meta) as fh:
+            meta = json.load(fh)
+        if (Path(config.train_annotations_path).exists() and len(os.listdir(config.train_images_dir)) >= meta["train_count"]
+            and Path(config.val_annotations_path).exists() and len(os.listdir(config.val_images_dir)) >= meta["val_count"]):
+            logger.info("Cache hit - loading datasets...")
+            return fo.Dataset.from_json(meta["train_ds"]), fo.Dataset.from_json(meta["val_ds"])
+        logger.warning("Cache invalid or incomplete, rebuilding...")
 
-    if cfg.use_downloaded:
-        train_fo, val_fo = download_datasets(cfg)
-        parts += [train_fo, val_fo]
+    np.random.seed(config.seed)
+    random.seed(config.seed)
+    torch.manual_seed(config.seed)
 
-    if cfg.use_custom:
-        custom_fo = load_custom_dataset(cfg)
-        if custom_fo:
-            parts.append(custom_fo)
-
+    parts: List[fo.Dataset] = []
+    if config.use_downloaded:
+        oi_classes = list(OPENIMAGES_MAPPING.keys())
+        logger.info(f"Downloading OpenImages subset: {oi_classes}")
+        ds_oi = foz.load_zoo_dataset(
+            "open-images-v7", split="train", classes=oi_classes,
+            label_types=["detections"], max_samples=config.openimages_max,
+            dataset_name=f"tmp_oi_{config.cache_hash}", seed=config.seed,
+        )
+        coco_classes = list(COCO_MAPPING.keys())
+        logger.info(f"Downloading COCO subset: {coco_classes}")
+        ds_coco = foz.load_zoo_dataset(
+            "coco-2017", split="train", classes=coco_classes,
+            label_types=["detections"], max_samples=config.coco_max,
+            dataset_name=f"tmp_coco_{config.cache_hash}", seed=config.seed,
+        )
+        joint = ds_oi.clone(f"joint_tmp_{config.cache_hash}")
+        joint.merge_samples(ds_coco)
+        parts.append(joint)
+    if config.use_custom:
+        custom = load_custom_dataset(config)
+        if custom:
+            parts.append(custom)
     if not parts:
-        raise ValueError("No dataset selected: set use_downloaded or use_custom")
+        raise ValueError("No datasets selected: enable use_downloaded or use_custom")
 
-    if len(parts) == 1:
-        joint = parts[0]
-    else:
-        joint = parts[0].clone(f"joint_merged_{int(time.time())}")
+    if len(parts) > 1:
+        merged = parts[0].clone(f"merged_all_{config.cache_hash}")
         for ds in parts[1:]:
-            joint.merge_samples(ds)
+            merged.merge_samples(ds)
+    else:
+        merged = parts[0]
 
-    mapped_joint = map_dataset_labels(joint)
-    val_mapped_joint = validate_and_filter_dataset(mapped_joint, cfg)
-    train_ds, val_ds = split_dataset(val_mapped_joint, cfg.val_split)
+    mapped = map_dataset_labels(merged)
+    filtered = validate_and_filter_dataset(mapped, config)
+    train_ds, val_ds = split_dataset(filtered, config.val_split)
 
-    convert_to_coco_format(train_ds, cfg.train_images_dir, cfg.train_annotations_path, cfg)
-    convert_to_coco_format(val_ds, cfg.val_images_dir, cfg.val_annotations_path, cfg)
+    convert_to_coco_format(train_ds, config.train_images_dir, config.train_annotations_path, config)
+    convert_to_coco_format(val_ds, config.val_images_dir, config.val_annotations_path, config)
+
+    if config.cache:
+        meta = {
+            "train_count": len(train_ds),
+            "val_count": len(val_ds),
+            "train_ds": str(Path(config.cache_dir) / f"train_{config.cache_hash}.json"),
+            "val_ds": str(Path(config.cache_dir) / f"val_{config.cache_hash}.json"),
+        }
+        train_ds.export(meta["train_ds"], fo.types.FiftyOneDataset)
+        val_ds.export(meta["val_ds"], fo.types.FiftyOneDataset)
+        with open(cache_meta, "w") as fh:
+            json.dump(meta, fh)
 
     return train_ds, val_ds
 
@@ -349,12 +367,8 @@ def map_dataset_labels(dataset: fo.Dataset) -> fo.Dataset:
     total_mapped   = 0
 
     for sample in tqdm(mapped, desc="Mapping labels"):
-        if not sample.has_field("ground_truth"):
-            continue
-        elif sample.ground_truth is None:
-            dets = sample.detections.detections
-        else:
-            dets = sample.ground_truth.detections
+        dets = getattr(sample, "ground_truth", None)
+        dets = dets.detections if dets else sample.detections.detections
 
         total_original += len(dets)
 
@@ -390,30 +404,25 @@ def validate_and_filter_dataset(ds: fo.Dataset, cfg: DatasetConfig) -> fo.Datase
     filtered = ds.clone()
     invalid_ids: list[str] = []
 
-    for s in tqdm(filtered, desc="Validating images"):
-        path = s.filepath
+    for sample in tqdm(filtered, desc="Validating images"):
+        path = sample.filepath
         try:
-            with Image.open(path) as img:
-                w, h = img.size
+            w, h = Image.open(path).size
         except Exception as e:
             logger.warning(f"Corrupt image {path}: {e}")
-            invalid_ids.append(s.id)
-            continue
-
-        if w < 10 or h < 10:
-            invalid_ids.append(s.id)
+            invalid_ids.append(sample.id)
             continue
 
         good_dets = []
-        for det in s.ground_truth.detections:
+        for det in sample.ground_truth.detections:
             x, y, bw, bh = det.bounding_box
             if bw * bh * w * h < cfg.min_box_area:
                 continue
             good_dets.append(det)
         if good_dets:
-            s.ground_truth.detections = good_dets
+            sample.ground_truth.detections = good_dets
         else:
-            invalid_ids.append(s.id)
+            invalid_ids.append(sample.id)
 
     if invalid_ids:
         filtered.delete_samples(invalid_ids)
@@ -435,14 +444,13 @@ def split_dataset(ds: fo.Dataset, val_split: float) -> Tuple[fo.Dataset, fo.Data
 
 def _copy_image(src_dst: Tuple[str, str]):
     src, dst = src_dst
-    dst_dir = os.path.dirname(dst)
-    os.makedirs(dst_dir, exist_ok=True)
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
     try:
-        with Image.open(src) as im:
-            if im.mode == "RGB" and src.lower().endswith(".jpg"):
+        with Image.open(src) as img:
+            if img.mode == "RGB" and src.lower().endswith(".jpg"):
                 shutil.copy(src, dst)
                 return True
-            im.convert("RGB").save(dst, "JPEG", quality=90, optimize=True)
+            img.convert("RGB").save(dst, "JPEG", quality=90, optimize=True)
             return True
     except Exception as e:
         logger.error(f"Failed to copy {src} → {e}")
