@@ -58,8 +58,9 @@ class DatasetConfig:
     num_workers          : int = 4
     custom_ds_data_path  : str = Path(__file__).resolve().parent.parent / "own_database"
     custom_ds_label_path : str = Path(__file__).resolve().parent.parent / r"own_database\annotations\own_coco.json"
-    use_downloaded       : bool = True
+    use_downloaded       : bool = False
     use_custom           : bool = True
+    augment              : bool = True
 
     train_images_dir: str = field(init=False, repr=False)
     val_images_dir: str = field(init=False, repr=False)
@@ -103,8 +104,8 @@ CLASSES = [
     "Yogurt",
     "Butter",
     "cocolino",
-    "Wine glass",
-    "Drink",
+    # "Wine glass",
+    # "Drink",
 ]
 CLASS_TO_IDX = {c: i for i, c in enumerate(CLASSES)}
 
@@ -463,8 +464,43 @@ class Compose:
         return img, tgt
 
 
-def get_transform(train: bool, size: int) -> Compose:
-    tfms = [Resize(size), ToTensor(), Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])]
+class RandomHorizontalFlip:
+    def __init__(self, p=0.5):
+        self.p = p
+
+    def __call__(self, img: Image.Image, tgt: dict[str, Any]):
+        if random.random() < self.p:
+            img = TF.hflip(img)
+            w, _ = img.size
+            boxes = tgt["boxes"]
+            # zamień x_min ↔ x_max
+            boxes[:, [0, 2]] = w - boxes[:, [2, 0]]
+            tgt["boxes"] = boxes
+        return img, tgt
+
+class RandomBrightnessContrast:
+    def __init__(self, brightness=0.2, contrast=0.2, p=0.5):
+        self.brightness = brightness
+        self.contrast = contrast
+        self.p = p
+
+    def __call__(self, img: Image.Image, tgt: dict[str, Any]):
+        if random.random() < self.p:
+            img = TF.adjust_brightness(img, 1 + (random.uniform(-self.brightness, self.brightness)))
+            img = TF.adjust_contrast(img,   1 + (random.uniform(-self.contrast,   self.contrast)))
+        return img, tgt
+
+def get_transform(train: bool, size: int, augment: bool = False) -> Compose:
+    # tfms = [Resize(size), ToTensor(), Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])]
+    # return Compose(tfms)
+    tfms = [Resize(size)]
+    if train and augment:
+        tfms += [
+            RandomHorizontalFlip(p=0.5),
+            RandomBrightnessContrast(brightness=0.2, contrast=0.2, p=0.5),
+            # … możesz dodać RandomRotation, GaussianBlur itp. …
+        ]
+    tfms += [ToTensor(), Normalize([0.485,0.456,0.406], [0.229,0.224,0.225])]
     return Compose(tfms)
 
 
@@ -547,8 +583,8 @@ def build_loaders(config: DatasetConfig,
     train_dataset = GroceryDataset(
         root        = config.train_images_dir,
         ann_file    = config.train_annotations_path,
-        transform   = get_transform(train=True, size=config.input_size),
-        augment     = True
+        transform   = get_transform(train=True, size=config.input_size, augment=config.augment),
+        augment     = config.augment
     )
 
     val_dataset = GroceryDataset(

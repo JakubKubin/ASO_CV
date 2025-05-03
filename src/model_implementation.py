@@ -4,6 +4,7 @@ from torchvision.models.detection import FasterRCNN, MaskRCNN
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
+from torchvision.models.resnet import ResNet50_Weights
 
 from dataset_pipeline import CLASSES
 
@@ -11,8 +12,14 @@ from dataset_pipeline import CLASSES
 # 1. Fabryki modeli
 # -----------------------------------------------------------------------------
 def _build_backbone(pretrained: bool = True):
-    """ResNet-50 + FPN; oddzielone do łatwego podmiana backbonu."""
-    return resnet_fpn_backbone("resnet50", pretrained=pretrained)
+    """ResNet-50 + FPN backbone z użyciem nowego API weights."""
+    # Wybór weights dla nowego API
+    weights = ResNet50_Weights.IMAGENET1K_V1 if pretrained else None
+    return resnet_fpn_backbone(
+        backbone_name="resnet50",
+        weights=weights,
+        trainable_layers=3
+    )
 
 def get_faster_rcnn(num_classes: int = len(CLASSES), pretrained_backbone=True):
     backbone = _build_backbone(pretrained_backbone)
@@ -52,6 +59,6 @@ def save_model(model, path: str):
 
 def load_model(model_type, path, num_classes=len(CLASSES)):
     model = initialize_model(model_type, num_classes, pretrained_backbone=False)
-    model.load_state_dict(torch.load(path, map_location="cpu"))
+    model.load_state_dict(torch.load(path, map_location="cpu", weights_only=True))
     model.eval()
     return model

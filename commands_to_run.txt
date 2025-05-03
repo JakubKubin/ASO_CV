@@ -1,1 +1,1 @@
-python src/model_train.py --model faster_rcnn --epochs 200
+python src/model_train.py --model faster_rcnn --epochs 20

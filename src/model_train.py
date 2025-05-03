@@ -28,28 +28,18 @@ def _train_one_epoch(model, optimizer, loader, device, epoch, print_freq=20):
 
     return running / len(loader)
 
-# def _evaluate(model, loader, device):
-#     model.eval()
-#     total = 0.0
-#     with torch.no_grad():
-#         for imgs, tgts in loader:
-#             imgs = [img.to(device) for img in imgs]
-#             tgts = [{k: v.to(device) for k, v in t.items()} for t in tgts]
-#             loss = sum(model(imgs, tgts).values())
-#             total += loss.item()
-#     return total / len(loader)
 
 def _evaluate(model, loader, device):
-    was_training = model.training        # zapamiętaj poprzedni stan
-    model.train()                        # ← potrzebny tryb treningowy!
+    was_training = model.training
+    model.train()
     total = 0.0
-    with torch.no_grad():               # bez gradientów ≈ eval
+    with torch.no_grad():
         for imgs, tgts in loader:
             imgs = [img.to(device) for img in imgs]
             tgts = [{k: v.to(device) for k, v in t.items()} for t in tgts]
-            losses = model(imgs, tgts)   # dict
+            losses = model(imgs, tgts)
             total += sum(losses.values()).item()
-    if not was_training:                 # przywróć stan modelu
+    if not was_training:
         model.eval()
     return total / len(loader)
 
@@ -59,14 +49,14 @@ def train(cfg: DatasetConfig,
           epochs=10,
           lr=5e-4,
           wd=5e-4,
-          outdir="checkpoints"):
+          outdir="checkpoints",
+          patience=5):
 
     os.makedirs(outdir, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("[INFO] device:", device)
 
-    model = initialize_model(model_type, len(CLASSES))
-    model.to(device)
+    model = initialize_model(model_type, len(CLASSES)).to(device)
 
     train_dl, val_dl = get_dataloaders(cfg)
 
@@ -76,6 +66,9 @@ def train(cfg: DatasetConfig,
 
     tb = SummaryWriter(os.path.join(outdir, "runs", datetime.datetime.now().strftime("%Y%m%d-%H%M%S")))
     history = {"train": [], "val": []}
+
+    best_val_loss = float('inf')
+    epochs_since_improve = 0
 
     for ep in range(epochs):
         t0 = time.time()
@@ -92,6 +85,18 @@ def train(cfg: DatasetConfig,
         if (ep+1) % 5 == 0 or ep == epochs-1:
             save_model(model, os.path.join(outdir, f"{model_type}_e{ep+1}.pth"))
 
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            epochs_since_improve = 0
+            save_model(model, os.path.join(outdir, f"{model_type}_best.pth"))
+            print(f"  → New best model (val_loss={val_loss:.4f}), saving.")
+        else:
+            epochs_since_improve += 1
+
+        # ⏹ early stopping
+        if epochs_since_improve >= patience:
+            print(f"No improvement for {patience} epochs. Early stopping.")
+            break
 
     with open(os.path.join(outdir, "history.json"), "w") as f:
         json.dump(history, f, indent=2)

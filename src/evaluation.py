@@ -1,14 +1,13 @@
 # /src/evaluation.py
+import time
+import os
 import torch
 import numpy as np
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support, accuracy_score
-import time
+import matplotlib.pyplot as plt
 
-# Importy z naszych modułów
 from dataset_pipeline import CLASSES
-from model_implementation import load_model
 
 def calculate_ap(recall, precision):
     """
@@ -30,81 +29,68 @@ def calculate_ap(recall, precision):
 
     return ap
 
-def calculate_map(predictions, targets, iou_threshold=0.5):
+def calculate_map(predictions: list, targets: list, iou_threshold: float = 0.5) -> tuple[float, dict]:
     """
-    Oblicza mean Average Precision (mAP) dla zestawu predykcji.
+    Compute mean Average Precision (mAP) and per-class AP.
+    predictions: list of dicts with keys 'boxes', 'scores', 'labels'
+    targets:     list of dicts with keys 'boxes', 'labels'
+    Returns mAP and dict[class_name -> AP]
     """
-    # Inicjalizacja metryk
-    ap_per_class = {i: [] for i in range(1, len(CLASSES))}  # Pomijamy tło
+    n_classes = len(CLASSES)
+    ap_per_class = {cls_id: [] for cls_id in range(1, n_classes)}
 
-    # Dla każdego obrazu
-    for pred, target in zip(predictions, targets):
-        pred_boxes = pred['boxes'].cpu()
-        pred_scores = pred['scores'].cpu()
-        pred_labels = pred['labels'].cpu()
+    # Iterate images
+    for preds, targs in zip(predictions, targets):
+        pred_boxes = preds['boxes'].cpu()
+        pred_scores = preds['scores'].cpu()
+        pred_labels = preds['labels'].cpu()
+        true_boxes = targs['boxes'].cpu()
+        true_labels = targs['labels'].cpu()
 
-        target_boxes = target['boxes'].cpu()
-        target_labels = target['labels'].cpu()
-
-        # Dla każdej klasy
-        for cls_id in range(1, len(CLASSES)):
-            # Znajdź predykcje i cele dla tej klasy
-            pred_idx = (pred_labels == cls_id).nonzero(as_tuple=True)[0]
-            target_idx = (target_labels == cls_id).nonzero(as_tuple=True)[0]
-
-            if len(target_idx) == 0:
-                continue  # Brak obiektów tej klasy w celu
-
-            if len(pred_idx) == 0:
-                ap_per_class[cls_id].append(0.0)  # Brak predykcji dla tej klasy
+        # For each class (skip background at 0)
+        for cls_id in range(1, n_classes):
+            # Mask by class
+            p_idx = (pred_labels == cls_id).nonzero(as_tuple=True)[0]
+            t_idx = (true_labels == cls_id).nonzero(as_tuple=True)[0]
+            if len(t_idx) == 0:
                 continue
-
-            # Posortuj predykcje według malejącego pewności
-            sorted_idx = torch.argsort(pred_scores[pred_idx], descending=True)
-            pred_idx = pred_idx[sorted_idx]
-
-            # Oblicz IoU między predykcjami a celami
-            pred_boxes_cls = pred_boxes[pred_idx]
-            target_boxes_cls = target_boxes[target_idx]
-
-            tp = np.zeros(len(pred_idx))
-            fp = np.zeros(len(pred_idx))
-
-            # Przypisz predykcje do celów
-            target_matched = np.zeros(len(target_idx), dtype=bool)
-
-            for i, pred_box_idx in enumerate(pred_idx):
-                # Oblicz IoU z wszystkimi celami
-                ious = calculate_iou_batch(pred_boxes[pred_box_idx].unsqueeze(0), target_boxes_cls)
-                max_iou, max_idx = torch.max(ious, dim=0)
-
-                if max_iou >= iou_threshold and not target_matched[max_idx]:
+            if len(p_idx) == 0:
+                ap_per_class[cls_id].append(0.0)
+                continue
+            # Sort preds by score
+            scores = pred_scores[p_idx]
+            order = torch.argsort(scores, descending=True)
+            p_idx = p_idx[order]
+            # True pos / false pos markers
+            tp = np.zeros(len(p_idx))
+            fp = np.zeros(len(p_idx))
+            matched = np.zeros(len(t_idx), dtype=bool)
+            # Evaluate each pred
+            for i, pi in enumerate(p_idx):
+                pb = pred_boxes[pi].unsqueeze(0)
+                ious = calculate_iou_batch(pb, true_boxes[t_idx])  # [1, T]
+                max_iou, max_j = torch.max(ious, dim=1)
+                if max_iou >= iou_threshold and not matched[max_j.item()]:
                     tp[i] = 1
-                    target_matched[max_idx] = True
+                    matched[max_j.item()] = True
                 else:
                     fp[i] = 1
-
-            # Oblicz skumulowane sumy TP i FP
-            tp_cumsum = np.cumsum(tp)
-            fp_cumsum = np.cumsum(fp)
-
-            # Oblicz precyzję i czułość
-            precision = tp_cumsum / (tp_cumsum + fp_cumsum + 1e-10)
-            recall = tp_cumsum / len(target_idx)
-
-            # Oblicz AP dla tej klasy
-            ap = calculate_ap(recall, precision)
+            # Cumulative
+            tp_cum = np.cumsum(tp)
+            fp_cum = np.cumsum(fp)
+            precisions = tp_cum / (tp_cum + fp_cum + 1e-10)
+            recalls = tp_cum / len(t_idx)
+            ap = calculate_ap(recalls, precisions)
             ap_per_class[cls_id].append(ap)
-
-    # Oblicz mAP jako średnią AP dla wszystkich klas
-    mAP = np.mean([np.mean(aps) if aps else 0.0 for cls_id, aps in ap_per_class.items()])
-
-    # Oblicz AP dla każdej klasy
-    class_ap = {CLASSES[cls_id]: np.mean(aps) if aps else 0.0 for cls_id, aps in ap_per_class.items()}
-
+    # Compute mean AP
+    class_ap = {}
+    for cls_id, ap_list in ap_per_class.items():
+        class_ap[CLASSES[cls_id]] = float(np.mean(ap_list)) if len(ap_list) > 0 else 0.0
+    mAP = float(np.mean(list(class_ap.values()))) if class_ap else 0.0
     return mAP, class_ap
 
-def calculate_iou_batch(boxes1, boxes2):
+
+def calculate_iou_batch(boxes1: torch.Tensor, boxes2: torch.Tensor) -> torch.Tensor:
     """
     Oblicza IoU (Intersection over Union) dla dwóch zestawów bounding boxów.
     """
@@ -131,82 +117,74 @@ def calculate_iou_batch(boxes1, boxes2):
 
     return iou
 
-def evaluate_model(model, data_loader, device):
+def evaluate_model(model: torch.nn.Module, data_loader, device: torch.device, iou_threshold: float = 0.5):
     """
-    Ocenia model na zbiorze danych i oblicza różne metryki.
+    Run model on data_loader and compute metrics.
+    Returns dict with mAP, class_ap, avg_inference_time (s), optionally confusion matrix.
     """
     model.eval()
-
-    all_predictions = []
-    all_targets = []
-    inference_times = []
+    all_preds = []
+    all_targs = []
+    times = []
 
     with torch.no_grad():
-        for images, targets in tqdm(data_loader, desc="Ewaluacja"):
-            images = list(img.to(device) for img in images)
-            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+        for imgs, targs in tqdm(data_loader, desc="Evaluate", leave=False):
+            imgs = [img.to(device) for img in imgs]
+            targs_gpu = [{k: v.to(device) for k, v in t.items()} for t in targs]
+            start = time.time()
+            outputs = model(imgs)
+            end = time.time()
+            # Collect
+            times.append((end - start) / len(imgs))
+            # Move to CPU
+            for out in outputs:
+                all_preds.append({
+                    'boxes': out['boxes'].cpu(),
+                    'scores': out['scores'].cpu(),
+                    'labels': out['labels'].cpu()
+                })
+            for gt in targs:
+                all_targs.append({
+                    'boxes': gt['boxes'],
+                    'labels': gt['labels']
+                })
+    # Compute detection metrics
+    mAP, class_ap = calculate_map(all_preds, all_targs, iou_threshold)
+    avg_inf_time = float(np.mean(times))
+    # Optionally compute confusion on classification of highest scoring box per image
+    # (Not typical for detection, skipped)
 
-            # Mierz czas inferencji
-            start_time = time.time()
-            outputs = model(images)
-            end_time = time.time()
-
-            # Zapisz czas inferencji
-            inference_times.extend([end_time - start_time] * len(images))
-
-            # Zapisz predykcje i cele
-            all_predictions.extend(outputs)
-            all_targets.extend(targets)
-
-    # Oblicz mAP
-    mAP, class_ap = calculate_map(all_predictions, all_targets)
-
-    # Oblicz średni czas inferencji
-    avg_inference_time = np.mean(inference_times)
-
-    # Przygotuj wyniki
-    results = {
+    return {
         'mAP': mAP,
         'class_ap': class_ap,
-        'avg_inference_time': avg_inference_time
+        'avg_inference_time': avg_inf_time
     }
 
-    # Dodatkowo możemy obliczyć macierz pomyłek i inne metryki
-    # (dla uproszczenia pomijamy to w tym przykładzie)
-
-    return results
-
-def plot_confusion_matrix(cm, classes, normalize=False, title='Macierz pomyłek', cmap=plt.cm.Blues):
+def plot_confusion_matrix(cm: np.ndarray, classes: list, normalize: bool = False, title: str = 'Confusion matrix') -> plt.Figure:
     """
-    Rysuje wizualizację macierzy pomyłek.
+    Plot confusion matrix for classification tasks.
     """
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-        print("Znormalizowana macierz pomyłek")
-    else:
-        print('Macierz pomyłek bez normalizacji')
-
-    plt.figure(figsize=(10, 8))
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    plt.title(title)
-    plt.colorbar()
-    tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=45)
-    plt.yticks(tick_marks, classes)
-
+    fig, ax = plt.subplots(figsize=(8, 6))
+    im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+    ax.figure.colorbar(im, ax=ax)
+    ax.set(
+        xticks=np.arange(len(classes)),
+        yticks=np.arange(len(classes)),
+        xticklabels=classes, yticklabels=classes,
+        ylabel='True label', xlabel='Predicted label', title=title
+    )
+    plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
     fmt = '.2f' if normalize else 'd'
     thresh = cm.max() / 2.
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
-            plt.text(j, i, format(cm[i, j], fmt),
-                     horizontalalignment="center",
-                     color="white" if cm[i, j] > thresh else "black")
+            ax.text(j, i, format(cm[i, j], fmt), ha='center', va='center',
+                    color='white' if cm[i, j] > thresh else 'black')
+    fig.tight_layout()
+    return fig
 
-    plt.tight_layout()
-    plt.ylabel('Etykieta prawdziwa')
-    plt.xlabel('Etykieta przewidziana')
-
-    return plt
 
 def print_evaluation_results(results):
     """
@@ -220,3 +198,26 @@ def print_evaluation_results(results):
         print(f"  {cls_name}: {ap:.4f}")
 
     print(f"\nŚredni czas inferencji: {results['avg_inference_time']*1000:.2f} ms")
+
+
+# If this module is run directly, example usage
+if __name__ == '__main__':
+    import argparse
+    from model_implementation import initialize_model, load_model
+    from dataset_pipeline import DatasetConfig, get_dataloaders
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model_path', required=True, help='Path to saved .pth model')
+    parser.add_argument('--data_cache', action='store_true')
+    args = parser.parse_args()
+
+    cfg = DatasetConfig(cache=args.data_cache)
+    train_dl, val_dl = get_dataloaders(cfg)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    # Load model
+    model = load_model(args.model_path, len(CLASSES)).to(device)
+
+    # Evaluate
+    results = evaluate_model(model, val_dl, device)
+    print_evaluation_results(results)
