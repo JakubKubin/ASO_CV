@@ -18,7 +18,7 @@ def _build_backbone(pretrained: bool = True):
     return resnet_fpn_backbone(
         backbone_name="resnet50",
         weights=weights,
-        trainable_layers=3
+        trainable_layers=5
     )
 
 def get_faster_rcnn(num_classes: int = len(CLASSES), pretrained_backbone=True):

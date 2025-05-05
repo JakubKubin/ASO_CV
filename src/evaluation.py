@@ -6,7 +6,7 @@ import numpy as np
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support, accuracy_score
 import matplotlib.pyplot as plt
-
+from pycocotools.cocoeval import COCOeval
 from dataset_pipeline import CLASSES
 
 def calculate_ap(recall, precision):
@@ -117,48 +117,138 @@ def calculate_iou_batch(boxes1: torch.Tensor, boxes2: torch.Tensor) -> torch.Ten
 
     return iou
 
-def evaluate_model(model: torch.nn.Module, data_loader, device: torch.device, iou_threshold: float = 0.5):
+# def evaluate_model(model: torch.nn.Module, data_loader, device: torch.device, iou_threshold: float = 0.5):
+#     """
+#     Run model on data_loader and compute metrics.
+#     Returns dict with mAP, class_ap, avg_inference_time (s), optionally confusion matrix.
+#     """
+#     model.eval()
+#     cpu_device = torch.device('cpu')
+
+#     all_preds = []
+#     all_targs = []
+#     inference_times = []
+
+#     with torch.no_grad():
+#         for imgs, targs in tqdm(data_loader, desc="Evaluate", leave=False):
+#             imgs = [img.to(device) for img in imgs]
+#             targs_gpu = [{k: v.to(device) for k, v in t.items()} for t in targs]
+#             start = time.time()
+#             outputs = model(imgs)
+#             end = time.time()
+#             # Collect
+#             inference_times.append((end - start) / len(imgs))
+#             # Move to CPU
+#             for out in outputs:
+#                 all_preds.append({
+#                     'boxes': out['boxes'].to(cpu_device),
+#                     'scores': out['scores'].to(cpu_device),
+#                     'labels': out['labels'].to(cpu_device)
+#                 })
+#             for gt in targs:
+#                 all_targs.append({
+#                     'boxes': gt['boxes'],
+#                     'labels': gt['labels']
+#                 })
+
+#     mAP, class_ap = calculate_map(all_preds, all_targs, iou_threshold)
+#     avg_inf_time = float(np.mean(inference_times))
+
+#     return {
+#         'mAP': mAP,
+#         'class_ap': class_ap,
+#         'avg_inference_time': avg_inf_time
+#     }
+
+def evaluate_model(model: torch.nn.Module,
+                   data_loader,
+                   device: torch.device,
+                   score_threshold: float = 0.5,
+                   iou_type: str = 'bbox') -> dict:
     """
-    Run model on data_loader and compute metrics.
-    Returns dict with mAP, class_ap, avg_inference_time (s), optionally confusion matrix.
+    Evaluate model using COCO metrics (via pycocotools).
+    Filters predictions by score_threshold and computes mAP with COCOeval.
+    Returns dict with mAP @[.5:.95], mAP @.50, mAP @.75, and avg inference time.
     """
     model.eval()
-    all_preds = []
-    all_targs = []
-    times = []
+    cpu_device = torch.device('cpu')
+
+    coco_gt = data_loader.dataset.coco
+    # Build inverse mapping from internal class idx to original COCO category id, if available
+    inv_map = None
+    if hasattr(data_loader.dataset, 'coco_id_to_class_idx'):
+        inv_map = {v: k for k, v in data_loader.dataset.coco_id_to_class_idx.items()}
+
+    results = []
+    image_ids = []
+    inference_times = []
 
     with torch.no_grad():
-        for imgs, targs in tqdm(data_loader, desc="Evaluate", leave=False):
-            imgs = [img.to(device) for img in imgs]
-            targs_gpu = [{k: v.to(device) for k, v in t.items()} for t in targs]
+        for images, targets in tqdm(data_loader, desc="Evaluate", leave=False):
+            images_dev = [img.to(device) for img in images]
             start = time.time()
-            outputs = model(imgs)
+            try:
+                outputs = model(images_dev)
+            except RuntimeError as e:
+                if 'out of memory' in str(e):
+                    torch.cuda.empty_cache()
+                    model.to(cpu_device)
+                    images_cpu = [img.to(cpu_device) for img in images]
+                    outputs = model(images_cpu)
+                    model.to(device)
+                else:
+                    raise
             end = time.time()
-            # Collect
-            times.append((end - start) / len(imgs))
-            # Move to CPU
-            for out in outputs:
-                all_preds.append({
-                    'boxes': out['boxes'].cpu(),
-                    'scores': out['scores'].cpu(),
-                    'labels': out['labels'].cpu()
-                })
-            for gt in targs:
-                all_targs.append({
-                    'boxes': gt['boxes'],
-                    'labels': gt['labels']
-                })
-    # Compute detection metrics
-    mAP, class_ap = calculate_map(all_preds, all_targs, iou_threshold)
-    avg_inf_time = float(np.mean(times))
-    # Optionally compute confusion on classification of highest scoring box per image
-    # (Not typical for detection, skipped)
+            inference_times.append((end - start) / len(images))
 
-    return {
-        'mAP': mAP,
-        'class_ap': class_ap,
-        'avg_inference_time': avg_inf_time
+            for out, t in zip(outputs, targets):
+                img_id = int(t['image_id'].item())
+                keep = out['scores'] >= score_threshold
+                boxes  = out['boxes'][keep].cpu().numpy()
+                scores = out['scores'][keep].cpu().numpy()
+                labels = out['labels'][keep].cpu().numpy()
+                for box, score, label in zip(boxes, scores, labels):
+                    x1, y1, x2, y2 = box
+                    # map internal label to COCO category_id
+                    cat_id = int(label)
+                    if inv_map is not None:
+                        cat_id = inv_map.get(label, label)
+                    results.append({
+                        'image_id': img_id,
+                        'category_id': cat_id,
+                        'bbox': [float(x1), float(y1), float(x2-x1), float(y2-y1)],
+                        'score': float(score)
+                    })
+                # record even if no detections? we include all images later
+                image_ids.append(img_id)
+
+    if not results:
+        print("[WARN] No detections above score_threshold. Returning zeros.")
+        return {
+            'mAP_coco': 0.0,
+            'mAP_50': 0.0,
+            'mAP_75': 0.0,
+            'avg_inference_time': float(np.mean(inference_times)) if inference_times else 0.0
+        }
+
+    # Run COCOeval
+    coco_dt   = coco_gt.loadRes(results)
+    coco_eval = COCOeval(coco_gt, coco_dt, iou_type)
+    # use all image ids in dataset for evaluation
+    all_ids = data_loader.dataset.ids if hasattr(data_loader.dataset, 'ids') else sorted(coco_gt.getImgIds())
+    coco_eval.params.imgIds = all_ids
+    coco_eval.evaluate()
+    coco_eval.accumulate()
+    coco_eval.summarize()
+
+    stats = coco_eval.stats
+    results_dict = {
+        'mAP_coco': float(stats[0]),
+        'mAP_50':   float(stats[1]),
+        'mAP_75':   float(stats[2]),
+        'avg_inference_time': float(np.mean(inference_times))
     }
+    return results_dict
 
 def plot_confusion_matrix(cm: np.ndarray, classes: list, normalize: bool = False, title: str = 'Confusion matrix') -> plt.Figure:
     """
@@ -186,18 +276,15 @@ def plot_confusion_matrix(cm: np.ndarray, classes: list, normalize: bool = False
     return fig
 
 
-def print_evaluation_results(results):
+def print_evaluation_results(results: dict):
     """
-    Wyświetla wyniki ewaluacji modelu.
+    Print evaluation metrics to console.
     """
-    print("\n===== WYNIKI EWALUACJI =====")
-    print(f"Mean Average Precision (mAP): {results['mAP']:.4f}")
-
-    print("\nAverage Precision per class:")
-    for cls_name, ap in results['class_ap'].items():
-        print(f"  {cls_name}: {ap:.4f}")
-
-    print(f"\nŚredni czas inferencji: {results['avg_inference_time']*1000:.2f} ms")
+    print("\n===== EVALUATION RESULTS =====")
+    print(f"COCO mAP @[.5:.95]:   {results['mAP_coco']:.4f}")
+    print(f"mAP @.50 IoU    :   {results['mAP_50']:.4f}")
+    print(f"mAP @.75 IoU    :   {results['mAP_75']:.4f}")
+    print(f"Avg inference time: {results['avg_inference_time']*1000:.2f} ms\n")
 
 
 # If this module is run directly, example usage

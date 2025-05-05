@@ -48,19 +48,19 @@ class DatasetConfig:
     data_dir             : str = "data"
     openimages_max       : int = 700
     coco_max             : int = 300
-    val_split            : float = 0.2
+    val_split            : float = 0.4
     seed                 : int = 42
     min_box_area         : int = 100
     cache                : bool = False
     copy_workers         : int = 8
     input_size           : int = 640
-    batch_size           : int = 4
-    num_workers          : int = 4
+    batch_size           : int = 1
+    num_workers          : int = 12
     custom_ds_data_path  : str = Path(__file__).resolve().parent.parent / "own_database"
     custom_ds_label_path : str = Path(__file__).resolve().parent.parent / r"own_database\annotations\own_coco.json"
     use_downloaded       : bool = False
     use_custom           : bool = True
-    augment              : bool = True
+    augment              : bool = False
 
     train_images_dir: str = field(init=False, repr=False)
     val_images_dir: str = field(init=False, repr=False)
@@ -526,7 +526,7 @@ class GroceryDataset(Dataset):
         ann_ids = coco.getAnnIds(imgIds=img_id)
         anns = coco.loadAnns(ann_ids)
 
-        boxes, labels = [], []
+        boxes, labels, masks  = [], [], []
         width, height = img.size
 
         for ann in anns:
@@ -546,20 +546,23 @@ class GroceryDataset(Dataset):
                 continue
 
             boxes.append(bbox)
-
             labels.append(self.coco_id_to_class_idx.get(ann["category_id"], 0))
+            masks.append(coco.annToMask(ann))
 
         boxes_t = torch.tensor(boxes, dtype=torch.float32) if boxes else torch.zeros((0, 4), dtype=torch.float32)
         labels_t = torch.tensor(labels, dtype=torch.int64) if labels else torch.zeros((0,), dtype=torch.int64)
+        masks_t  = torch.as_tensor(np.stack(masks, axis=0), dtype=torch.uint8) if masks else torch.zeros((0, height, width), dtype=torch.uint8)
         img_t = torch.tensor([img_id])
         area = (boxes_t[:, 3] - boxes_t[:, 1]) * (boxes_t[:, 2] - boxes_t[:, 0]) if boxes else torch.zeros((0,))
+        iscrowd_t  = torch.zeros((len(labels),), dtype=torch.int64)
 
         target = {
             "boxes": boxes_t,
             "labels": labels_t,
+            "masks": masks_t,
             "image_id": img_t,
             "area": area,
-            "iscrowd": torch.zeros((len(labels),), dtype=torch.int64),
+            "iscrowd": iscrowd_t,
         }
 
         if self.transform:
@@ -600,7 +603,7 @@ def build_loaders(config: DatasetConfig,
         shuffle     = True,
         num_workers = config.num_workers,
         collate_fn  = collate_fn,
-        pin_memory  = True
+        pin_memory  = False,
     )
 
     val_ld = DataLoader(
@@ -609,7 +612,7 @@ def build_loaders(config: DatasetConfig,
         shuffle     = False,
         num_workers = config.num_workers,
         collate_fn  = collate_fn,
-        pin_memory  = True
+        pin_memory  = False,
     )
 
     return train_ld, val_ld

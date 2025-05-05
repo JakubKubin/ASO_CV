@@ -60,18 +60,18 @@ def visualize_predictions(image, predictions, output_path=None):
         class_name = CLASSES[label.item()]
         color = plt.cm.rainbow(label.item() / len(CLASSES))
         color = (int(color[0]*255), int(color[1]*255), int(color[2]*255))
-        cv2.rectangle(img_draw, (xmin, ymin), (xmax, ymax), color, 2)
+        cv2.rectangle(img_draw, (xmin, ymin), (xmax, ymax), color, 10)
         text = f"{class_name}: {score:.2f}"
-        (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
-        cv2.rectangle(img_draw, (xmin, ymin - th - 5), (xmin + tw, ymin), color, -1)
-        cv2.putText(img_draw, text, (xmin, ymin - 5),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+        (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 3, 4)
+        cv2.rectangle(img_draw, (xmin, ymin - th - 10), (xmin + tw, ymin), color, -1)
+        cv2.putText(img_draw, text, (xmin, ymin - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 0, 0), 4)
         if 'masks' in predictions:
             mask = predictions['masks'][i, 0].cpu().numpy()
             mask = (mask > 0.5).astype(np.uint8)
             color_mask = np.zeros_like(img_draw)
             color_mask[mask == 1] = color
-            img_draw = cv2.addWeighted(img_draw, 1, color_mask, 0.3, 0)
+            img_draw = cv2.addWeighted(img_draw, 1, color_mask, 0.5, 0)
 
     if output_path:
         cv2.imwrite(output_path, cv2.cvtColor(img_draw, cv2.COLOR_RGB2BGR))
