@@ -1,2 +1,2 @@
-python src/model_train.py --model faster_rcnn --epochs 20
+python src/model_train.py --model mask_rcnn --epochs 20
 python .\src\main.py --mode infer --model_type mask_rcnn --model_path .\checkpoints\mask_rcnn_last.pth --threshold 0.2 --image_path .\data\images\train\000307.jpg

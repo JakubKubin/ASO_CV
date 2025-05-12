@@ -1,10 +1,8 @@
-import os
 import argparse
 import torch
-from torch.utils.data import DataLoader
 
 from dataset_pipeline import get_dataloaders, DatasetConfig
-from model_implementation import initialize_model, save_model, load_model
+from model_implementation import load_model
 from model_train import train
 from evaluation import evaluate_model, print_evaluation_results
 from inference import process_image

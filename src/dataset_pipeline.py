@@ -24,7 +24,8 @@ from tqdm import tqdm
 
 import fiftyone as fo
 import fiftyone.zoo as foz
-from fiftyone import ViewField as F
+from fiftyone import ViewField as VF
+import torch.nn.functional as F
 
 # -----------------------------------------------------------------------------
 # 1. Logging setup
@@ -438,8 +439,16 @@ class Resize:
         if tgt.get("boxes") is not None and tgt["boxes"].numel():
             boxes = tgt["boxes"] * torch.tensor([sx, sy, sx, sy])
             tgt = {**tgt, "boxes": boxes, "area": (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])}
-        return img, tgt
 
+        # *** MASKS ***
+        if tgt.get("masks") is not None and tgt["masks"].numel():
+            # masks: (N, H0, W0) → (N, 1, H0, W0)
+            masks = tgt["masks"].unsqueeze(1).float()
+            masks = F.interpolate(masks, size=(self.size, self.size), mode="nearest")
+            # back to (N, H, W) uint8
+            tgt["masks"] = masks.squeeze(1).to(torch.uint8)
+
+        return img, tgt
 
 class ToTensor:
     def __call__(self, img: Image.Image, tgt: dict[str, Any]):
@@ -472,10 +481,14 @@ class RandomHorizontalFlip:
         if random.random() < self.p:
             img = TF.hflip(img)
             w, _ = img.size
+            # BOXES
             boxes = tgt["boxes"]
-            # zamień x_min ↔ x_max
             boxes[:, [0, 2]] = w - boxes[:, [2, 0]]
             tgt["boxes"] = boxes
+
+            # MASKS
+            if tgt.get("masks") is not None and tgt["masks"].numel():
+                tgt["masks"] = tgt["masks"].flip(-1)
         return img, tgt
 
 class RandomBrightnessContrast:
@@ -567,6 +580,13 @@ class GroceryDataset(Dataset):
 
         if self.transform:
             img, target = self.transform(img, target)
+
+        _, H, W = img.shape
+        masks = target.get("masks")
+        if masks is None or masks.numel() == 0:
+            # nawet jeśli wcześniej było torch.zeros((0,h0,w0)), po Resize/HFlip
+            # rozmiar mógł ulec zmianie — nadpisujemy
+            target["masks"] = torch.zeros((0, H, W), dtype=torch.uint8)
 
         return img, target
 

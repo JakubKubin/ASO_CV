@@ -163,8 +163,8 @@ def calculate_iou_batch(boxes1: torch.Tensor, boxes2: torch.Tensor) -> torch.Ten
 def evaluate_model(model: torch.nn.Module,
                    data_loader,
                    device: torch.device,
-                   score_threshold: float = 0.5,
-                   iou_type: str = 'bbox') -> dict:
+                   score_threshold: float = 0.0,
+                   iou_type: str = 'segm') -> dict:
     """
     Evaluate model using COCO metrics (via pycocotools).
     Filters predictions by score_threshold and computes mAP with COCOeval.
@@ -203,10 +203,9 @@ def evaluate_model(model: torch.nn.Module,
 
             for out, t in zip(outputs, targets):
                 img_id = int(t['image_id'].item())
-                keep = out['scores'] >= score_threshold
-                boxes  = out['boxes'][keep].cpu().numpy()
-                scores = out['scores'][keep].cpu().numpy()
-                labels = out['labels'][keep].cpu().numpy()
+                boxes  = out['boxes'].cpu().numpy()
+                scores = out['scores'].cpu().numpy()
+                labels = out['labels'].cpu().numpy()
                 for box, score, label in zip(boxes, scores, labels):
                     x1, y1, x2, y2 = box
                     # map internal label to COCO category_id
@@ -224,28 +223,39 @@ def evaluate_model(model: torch.nn.Module,
 
     if not results:
         print("[WARN] No detections above score_threshold. Returning zeros.")
-        return {
-            'mAP_coco': 0.0,
-            'mAP_50': 0.0,
-            'mAP_75': 0.0,
-            'avg_inference_time': float(np.mean(inference_times)) if inference_times else 0.0
-        }
+        return {k: 0.0 for k in [
+            'mAP_coco','mAP_50','mAP_75',
+            'AP_small','AP_medium','AP_large',
+            'AR_1','AR_10','AR_100',
+            'AR_small','AR_medium','AR_large']
+        } | {'avg_inference_time': float(np.mean(inference_times)) if inference_times else 0.0}
 
     # Run COCOeval
-    coco_dt   = coco_gt.loadRes(results)
+    coco_dt = coco_gt.loadRes(results)
     coco_eval = COCOeval(coco_gt, coco_dt, iou_type)
-    # use all image ids in dataset for evaluation
-    all_ids = data_loader.dataset.ids if hasattr(data_loader.dataset, 'ids') else sorted(coco_gt.getImgIds())
+    
+    all_ids = (data_loader.dataset.ids if hasattr(data_loader.dataset, 'ids')
+               else sorted(coco_gt.getImgIds()))
     coco_eval.params.imgIds = all_ids
     coco_eval.evaluate()
     coco_eval.accumulate()
     coco_eval.summarize()
 
-    stats = coco_eval.stats
+    stats = coco_eval.stats  # 12-element array
+    clamp = lambda v: float(v) if v > 0 else 0.0
     results_dict = {
-        'mAP_coco': float(stats[0]),
-        'mAP_50':   float(stats[1]),
-        'mAP_75':   float(stats[2]),
+        'mAP_coco':   clamp(stats[0]),
+        'mAP_50':     clamp(stats[1]),
+        'mAP_75':     clamp(stats[2]),
+        'AP_small':   clamp(stats[3]),
+        'AP_medium':  clamp(stats[4]),
+        'AP_large':   clamp(stats[5]),
+        'AR_1':       clamp(stats[6]),
+        'AR_10':      clamp(stats[7]),
+        'AR_100':     clamp(stats[8]),
+        'AR_small':   clamp(stats[9]),
+        'AR_medium':  clamp(stats[10]),
+        'AR_large':   clamp(stats[11]),
         'avg_inference_time': float(np.mean(inference_times))
     }
     return results_dict
@@ -278,13 +288,36 @@ def plot_confusion_matrix(cm: np.ndarray, classes: list, normalize: bool = False
 
 def print_evaluation_results(results: dict):
     """
-    Print evaluation metrics to console.
+    Print evaluation metrics in a readable table.
     """
-    print("\n===== EVALUATION RESULTS =====")
-    print(f"COCO mAP @[.5:.95]:   {results['mAP_coco']:.4f}")
-    print(f"mAP @.50 IoU    :   {results['mAP_50']:.4f}")
-    print(f"mAP @.75 IoU    :   {results['mAP_75']:.4f}")
-    print(f"Avg inference time: {results['avg_inference_time']*1000:.2f} ms\n")
+    # Prepare metrics
+    table = [
+        ("mAP@[.5:.95]", f"{results['mAP_coco']:.6f}"),
+        ("mAP@0.50",       f"{results['mAP_50']:.6f}"),
+        ("mAP@0.75",       f"{results['mAP_75']:.6f}"),
+        ("AP (small)",     f"{results['AP_small']:.6f}"),
+        ("AP (medium)",    f"{results['AP_medium']:.6f}"),
+        ("AP (large)",     f"{results['AP_large']:.6f}"),
+        ("AR@1",           f"{results['AR_1']:.6f}"),
+        ("AR@10",          f"{results['AR_10']:.6f}"),
+        ("AR@100",         f"{results['AR_100']:.6f}"),
+        ("AR (small)",     f"{results['AR_small']:.6f}"),
+        ("AR (medium)",    f"{results['AR_medium']:.6f}"),
+        ("AR (large)",     f"{results['AR_large']:.6f}"),
+        ("Avg inf time (ms)", f"{results['avg_inference_time']*1000:.2f}")
+    ]
+    # Column widths
+    col1 = max(len(row[0]) for row in table)
+    col2 = max(len(row[1]) for row in table)
+    # Print header
+    sep = "=" * (col1 + col2 + 5)
+    print(f"\n{sep}")
+    print(f"{'METRIC'.ljust(col1)} | {'VALUE'.rjust(col2)}")
+    print("-" * (col1 + col2 + 5))
+    # Print rows
+    for name, val in table:
+        print(f"{name.ljust(col1)} | {val.rjust(col2)}")
+    print(f"{sep}\n")
 
 
 # If this module is run directly, example usage
