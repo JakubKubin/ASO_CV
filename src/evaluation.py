@@ -218,11 +218,11 @@ def evaluate_model(model: torch.nn.Module,
                         'bbox': [float(x1), float(y1), float(x2-x1), float(y2-y1)],
                         'score': float(score)
                     })
-                # record even if no detections? we include all images later
+                    print(f"Result: {results[-1]}")
                 image_ids.append(img_id)
 
     if not results:
-        print("[WARN] No detections above score_threshold. Returning zeros.")
+        print("[WARN] No detections. Returning zeros.")
         return {k: 0.0 for k in [
             'mAP_coco','mAP_50','mAP_75',
             'AP_small','AP_medium','AP_large',
@@ -233,7 +233,7 @@ def evaluate_model(model: torch.nn.Module,
     # Run COCOeval
     coco_dt = coco_gt.loadRes(results)
     coco_eval = COCOeval(coco_gt, coco_dt, iou_type)
-    
+
     all_ids = (data_loader.dataset.ids if hasattr(data_loader.dataset, 'ids')
                else sorted(coco_gt.getImgIds()))
     coco_eval.params.imgIds = all_ids

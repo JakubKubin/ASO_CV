@@ -48,7 +48,7 @@ def get_mask_rcnn(num_classes: int = len(CLASSES), name_backbone: str = 'resnext
     model.roi_heads.mask_predictor = MaskRCNNPredictor(inmask, 256, num_classes)
     return model
 
-def initialize_model(model_type="faster_rcnn",
+def initialize_model(model_type="mask_rcnn",
                      num_classes=len(CLASSES),
                      name_backbone='resnext101_32x8d',
                      layers_backbone=5,
@@ -68,6 +68,6 @@ def save_model(model, path: str):
 
 def load_model(model_type, path, num_classes=len(CLASSES)):
     model = initialize_model(model_type=model_type, num_classes=num_classes, pretrained_backbone=False)
-    model.load_state_dict(torch.load(path, map_location="cpu", weights_only=True))
+    model.load_state_dict(torch.load(path, map_location="cuda", weights_only=True))
     model.eval()
     return model
