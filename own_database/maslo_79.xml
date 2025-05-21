@@ -1,0 +1,26 @@
+<annotation>
+	<folder>jpgixml</folder>
+	<filename>maslo_79.jpg</filename>
+	<path>C:\Users\sandr\Desktop\Aso_do_dodania_na_gita_21_maja\jpgixml\maslo_79.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3024</width>
+		<height>4032</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Butter</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>580</xmin>
+			<ymin>2004</ymin>
+			<xmax>2139</xmax>
+			<ymax>3263</ymax>
+		</bndbox>
+	</object>
+</annotation>

@@ -1,0 +1,26 @@
+<annotation>
+	<folder>jpgixml</folder>
+	<filename>mleko_126.jpg</filename>
+	<path>C:\Users\sandr\Desktop\Aso_do_dodania_na_gita_21_maja\jpgixml\mleko_126.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3024</width>
+		<height>4032</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Milk</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1562</xmin>
+			<ymin>1136</ymin>
+			<xmax>2343</xmax>
+			<ymax>2795</ymax>
+		</bndbox>
+	</object>
+</annotation>
