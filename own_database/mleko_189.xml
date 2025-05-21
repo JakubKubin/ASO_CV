@@ -1,0 +1,26 @@
+<annotation>
+	<folder>own_database</folder>
+	<filename>mleko_189.jpg</filename>
+	<path>C:\Users\aceli\Desktop\ASO_CV\own_database\mleko_189.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3024</width>
+		<height>4032</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Milk</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>934</xmin>
+			<ymin>1246</ymin>
+			<xmax>1673</xmax>
+			<ymax>3125</ymax>
+		</bndbox>
+	</object>
+</annotation>

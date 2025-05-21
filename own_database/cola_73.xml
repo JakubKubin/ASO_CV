@@ -1,0 +1,86 @@
+<annotation>
+	<folder>own_database</folder>
+	<filename>cola_73.jpg</filename>
+	<path>C:\Users\aceli\Desktop\ASO_CV\own_database\cola_73.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3024</width>
+		<height>4032</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>316</xmin>
+			<ymin>1003</ymin>
+			<xmax>1051</xmax>
+			<ymax>3590</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1081</xmin>
+			<ymin>920</ymin>
+			<xmax>1829</xmax>
+			<ymax>3546</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1847</xmin>
+			<ymin>894</ymin>
+			<xmax>2594</xmax>
+			<ymax>3607</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>1</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>2868</xmin>
+			<ymin>977</ymin>
+			<xmax>3024</xmax>
+			<ymax>3559</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>190</xmin>
+			<ymin>1181</ymin>
+			<xmax>529</xmax>
+			<ymax>3373</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>2712</xmin>
+			<ymin>1064</ymin>
+			<xmax>2886</xmax>
+			<ymax>3242</ymax>
+		</bndbox>
+	</object>
+</annotation>

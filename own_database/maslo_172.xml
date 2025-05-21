@@ -1,0 +1,26 @@
+<annotation>
+	<folder>own_database</folder>
+	<filename>maslo_172.jpg</filename>
+	<path>C:\Users\aceli\Desktop\ASO_CV\own_database\maslo_172.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3024</width>
+		<height>4032</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Butter</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1525</xmin>
+			<ymin>2759</ymin>
+			<xmax>2590</xmax>
+			<ymax>3790</ymax>
+		</bndbox>
+	</object>
+</annotation>
