@@ -1,0 +1,26 @@
+<annotation>
+	<folder>rotated</folder>
+	<filename>cola_501.jpg</filename>
+	<path>C:\Users\piotr\Aso2\rotated\cola_501.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3000</width>
+		<height>4000</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Coca Cola</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>771</xmin>
+			<ymin>1317</ymin>
+			<xmax>1384</xmax>
+			<ymax>3195</ymax>
+		</bndbox>
+	</object>
+</annotation>

@@ -1,0 +1,26 @@
+<annotation>
+	<folder>rotated</folder>
+	<filename>maslo_501.jpg</filename>
+	<path>C:\Users\piotr\Aso2\rotated\maslo_501.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3000</width>
+		<height>4000</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Butter</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1197</xmin>
+			<ymin>1934</ymin>
+			<xmax>2027</xmax>
+			<ymax>2486</ymax>
+		</bndbox>
+	</object>
+</annotation>

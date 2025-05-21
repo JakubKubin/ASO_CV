@@ -1,0 +1,26 @@
+<annotation>
+	<folder>rotated</folder>
+	<filename>jogurt_501.jpg</filename>
+	<path>C:\Users\piotr\Aso2\rotated\jogurt_501.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3000</width>
+		<height>4000</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Yogurt</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1245</xmin>
+			<ymin>2099</ymin>
+			<xmax>1784</xmax>
+			<ymax>2973</ymax>
+		</bndbox>
+	</object>
+</annotation>

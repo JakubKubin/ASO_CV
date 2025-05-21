@@ -1,0 +1,26 @@
+<annotation>
+	<folder>rotated</folder>
+	<filename>coco_514.jpg</filename>
+	<path>C:\Users\piotr\Aso2\rotated\coco_514.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>3000</width>
+		<height>4000</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>cocolino</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1258</xmin>
+			<ymin>851</ymin>
+			<xmax>2014</xmax>
+			<ymax>2586</ymax>
+		</bndbox>
+	</object>
+</annotation>
