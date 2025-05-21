@@ -1,0 +1,26 @@
+<annotation>
+	<folder>rotated</folder>
+	<filename>mleko_167.jpg</filename>
+	<path>C:\Users\Patrycja\Downloads\zdjecia aso-20250520T163724Z-1-001\zdjecia aso\rotated\mleko_167.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>4284</width>
+		<height>5712</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Milk</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1735</xmin>
+			<ymin>349</ymin>
+			<xmax>3670</xmax>
+			<ymax>5042</ymax>
+		</bndbox>
+	</object>
+</annotation>

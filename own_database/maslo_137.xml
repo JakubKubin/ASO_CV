@@ -1,0 +1,26 @@
+<annotation>
+	<folder>rotated</folder>
+	<filename>maslo_137.jpg</filename>
+	<path>C:\Users\Patrycja\Downloads\zdjecia aso-20250520T163724Z-1-001\zdjecia aso\rotated\maslo_137.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>4284</width>
+		<height>5712</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Butter</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>613</xmin>
+			<ymin>970</ymin>
+			<xmax>3692</xmax>
+			<ymax>3234</ymax>
+		</bndbox>
+	</object>
+</annotation>
