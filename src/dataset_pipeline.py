@@ -501,8 +501,6 @@ class RandomBrightnessContrast:
         return img, tgt
 
 def get_transform(train: bool, size: int, augment: bool = False) -> Compose:
-    # tfms = [Resize(size), ToTensor(), Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])]
-    # return Compose(tfms)
     tfms = [Resize(size)]
     if train and augment:
         tfms += [

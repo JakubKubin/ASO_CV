@@ -1,10 +1,8 @@
 # /src/evaluation.py
 import time
-import os
 import torch
 import numpy as np
 from tqdm import tqdm
-from sklearn.metrics import confusion_matrix, precision_recall_fscore_support, accuracy_score
 import matplotlib.pyplot as plt
 from pycocotools.cocoeval import COCOeval
 from dataset_pipeline import CLASSES
@@ -182,7 +180,7 @@ def evaluate_model(model: torch.nn.Module,
                         'bbox': [float(x1), float(y1), float(w), float(h)],
                         'score': float(scores[idx].item())
                     })
-                    print(f"Result: {results[-1]}")
+                    # print(f"Result: {results[-1]}")
 
                 # for box, score, label in zip(boxes, scores, labels):
                 #     x1, y1, x2, y2 = box

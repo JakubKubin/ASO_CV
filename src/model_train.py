@@ -4,7 +4,6 @@ import torch, argparse, json
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from torch.nn.utils import clip_grad_norm_
-from torch.amp import autocast, GradScaler
 from torch.optim.lr_scheduler import OneCycleLR
 
 from dataset_pipeline import DatasetConfig, get_dataloaders
@@ -78,11 +77,11 @@ def _evaluate(model, loader, device):
 
 def train(cfg: DatasetConfig,
           model_type: str = "mask_rcnn",
-          epochs: int = 300,
+          epochs: int = 200,
           lr: float = 0.005,
           wd: float = 1e-4,
           outdir: str = "checkpoints",
-          patience: int = 300,
+          patience: int = 20,
           eval_interval: int = 5):
     """
     Trains object detection model using SGD with separate LR for backbone and head,
