@@ -13,64 +13,6 @@ from evaluation import evaluate_model, print_evaluation_results
 from model_implementation import initialize_model, save_model
 
 
-# def _train_one_epoch(model, optimizer, scheduler, loader, device,
-#                      epoch, tensorboard=None, print_freq=20, loss_threshold=1000.0):
-#     """
-#     Train one epoch with mixed precision, gradient clipping,
-#     and OneCycleLR scheduling per batch.
-#     """
-#     model.train()
-#     is_cuda = torch.cuda.is_available()
-#     scaler = GradScaler()
-#     iters = len(loader)
-#     running_loss = 0.0
-
-#     for i, (imgs, tgts) in enumerate(tqdm(loader, desc=f"Epoch {epoch+1}/{iters}")):
-
-#         step = epoch * iters + i + 1
-
-#         imgs = [img.to(device) for img in imgs]
-#         tgts = [{k: v.to(device) for k, v in t.items()} for t in tgts]
-
-#         optimizer.zero_grad()
-#         with autocast('cuda', enabled=is_cuda):
-#             loss_dict = model(imgs, tgts)
-#             # Check for NaNs in individual losses
-#             has_nan = False
-#             for name, val in loss_dict.items():
-#                 if torch.isnan(val) or torch.isinf(val):
-#                     print(f"[WARN] Skipping batch {i} due to NaN/Inf in loss '{name}': {val}")
-#                     has_nan = True
-#                     break
-#             if has_nan:
-#                 continue
-#             loss = sum(loss_dict.values())
-#         loss_val = loss.item()
-#         if loss_val > loss_threshold:
-#             print(f"[WARN] Skipping batch {i} due to large loss: {loss_val:.1f}")
-#             continue
-
-#         scaler.scale(loss).backward()
-#         scaler.unscale_(optimizer)
-#         clip_grad_norm_(model.parameters(), max_norm=1.0)
-#         scaler.step(optimizer)
-#         scheduler.step()
-
-#         scaler.update()
-
-#         running_loss += loss_val
-#         valid_batches += 1
-#         if i % print_freq == 0:
-#             current_lr = optimizer.param_groups[0]['lr']
-#             print(f"[{epoch+1}][{i}/{iters}] loss={loss_val:.4f}, lr={current_lr:.2e}")
-
-#         if tensorboard:
-#             tensorboard.add_scalar('loss/train_total', loss_val, step)
-#             tensorboard.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], step)
-
-#     avg_loss = running_loss / max(1, valid_batches)
-#     return avg_loss
-
 def _train_one_epoch(model, optimizer, scheduler, loader, device,
                      epoch, tensorboard=None, print_freq=20, loss_threshold=1000.0):
     """
@@ -82,7 +24,7 @@ def _train_one_epoch(model, optimizer, scheduler, loader, device,
     running_loss = 0.0
     valid_batches = 0
 
-    for i, (imgs, tgts) in enumerate(tqdm(loader, desc=f"Epoch {epoch+1}/{iters}")):
+    for i, (imgs, tgts) in enumerate(tqdm(loader, desc=f"Epoch {epoch+1}")):
         step = epoch * iters + i + 1
         imgs = [img.to(device) for img in imgs]
         tgts = [{k: v.to(device) for k, v in t.items()} for t in tgts]
@@ -102,7 +44,7 @@ def _train_one_epoch(model, optimizer, scheduler, loader, device,
         # Backward
         optimizer.zero_grad()
         loss.backward()
-        clip_grad_norm_(model.parameters(), max_norm=1.0)
+        clip_grad_norm_(model.parameters(), max_norm=7.0)
         optimizer.step()
         # Scheduler step
         scheduler.step()
@@ -135,12 +77,12 @@ def _evaluate(model, loader, device):
 
 
 def train(cfg: DatasetConfig,
-          model_type: str = "faster_rcnn",
-          epochs: int = 50,
-          lr: float = 5e-5,
+          model_type: str = "mask_rcnn",
+          epochs: int = 300,
+          lr: float = 0.005,
           wd: float = 1e-4,
           outdir: str = "checkpoints",
-          patience: int = 10,
+          patience: int = 300,
           eval_interval: int = 5):
     """
     Trains object detection model using SGD with separate LR for backbone and head,
@@ -208,7 +150,7 @@ def train(cfg: DatasetConfig,
         # Train one epoch
         train_loss = _train_one_epoch(
             model, optimizer, scheduler, train_dl, device,
-            epochs, tensorboard=tb, print_freq=20
+            ep, tensorboard=tb, print_freq=20
         )
         history['train_loss'].append(train_loss)
 
@@ -236,7 +178,7 @@ def train(cfg: DatasetConfig,
                 best_map = eval_results['mAP_coco']
                 no_improve = 0
                 save_model(model, os.path.join(outdir, f"{model_type}_best.pth"))
-                print(f"[INFO] New best mAP: {best_map:.4f}")
+                print(f"[INFO] New best mAP: {best_map:.7f}")
             else:
                 no_improve += 1
 
@@ -260,9 +202,9 @@ def train(cfg: DatasetConfig,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', choices=['faster_rcnn','mask_rcnn'], default='faster_rcnn')
+    parser.add_argument('--model', choices=['faster_rcnn','mask_rcnn'], default='mask_rcnn')
     parser.add_argument('--epochs', type=int, default=200)
-    parser.add_argument('--patience', type=int, default=50)
+    parser.add_argument('--patience', type=int, default=200)
     parser.add_argument('--eval_interval', type=int, default=1)
     parser.add_argument('--cache', action='store_true')
     args = parser.parse_args()

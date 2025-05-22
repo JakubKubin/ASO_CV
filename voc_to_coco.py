@@ -214,7 +214,7 @@ def voc_to_coco(
             coco["images"].append(image_info)
 
             for ann in annotations:
-                if cats:  # Only proceed if we have categories for this image
+                if cats:
                     category_name = cats[0]  # Use the first category as a fallback
                     ann["category_id"] = categories.get(category_name, 0)
                     ann["id"] = annotation_id
@@ -251,12 +251,12 @@ def main():
     default_voc_dir, default_output = get_default_paths()
 
     parser = argparse.ArgumentParser(description="Convert VOC XML annotations to COCO JSON format")
-    parser.add_argument("--voc-dir", type=str, default=str(default_voc_dir), 
+    parser.add_argument("--voc-dir", type=str, default=str(default_voc_dir),
                         help=f"Directory containing VOC XML files (default: {default_voc_dir})")
-    parser.add_argument("--output", type=str, default=str(default_output), 
+    parser.add_argument("--output", type=str, default=str(default_output),
                         help=f"Path for output COCO JSON file (default: {default_output})")
     parser.add_argument("--category-map", type=str, help="Optional JSON file containing category name to ID mapping")
-    parser.add_argument("--threads", type=int, default=4, help="Number of threads for parallel processing")
+    parser.add_argument("--threads", type=int, default=8, help="Number of threads for parallel processing")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
 
     args = parser.parse_args()

@@ -16,7 +16,7 @@ def main():
 
     parser.add_argument('--data_dir', type=str, default='data',
                       help='Katalog z danymi')
-    parser.add_argument('--model_type', type=str, default='faster_rcnn', choices=['faster_rcnn', 'mask_rcnn'],
+    parser.add_argument('--model_type', type=str, default='mask_rcnn', choices=['faster_rcnn', 'mask_rcnn'],
                       help='Typ modelu: faster_rcnn lub mask_rcnn')
     parser.add_argument('--output_dir', type=str, default='models',
                       help='Katalog wyjściowy na modele')
@@ -26,10 +26,14 @@ def main():
                       help='Ścieżka do obrazu do analizy')
     parser.add_argument('--output_path', type=str,
                       help='Ścieżka do zapisania obrazu z detekcjami')
-    parser.add_argument('--epochs', type=int, default=10,
+    parser.add_argument('--epochs', type=int, default=300,
                       help='Liczba epok treningu')
+    parser.add_argument('--patience', type=int, default=300,
+                      help='Liczba epok bez poprawy przed wczesnym zatrzymaniem')
     parser.add_argument('--batch_size', type=int, default=4,
                       help='Rozmiar batcha')
+    parser.add_argument('--cache', action='store_true',
+                      help='Czy używać pamięci podręcznej dla danych')
     parser.add_argument('--threshold', type=float, default=0.1,
                       help='Próg pewności dla detekcji')
 
@@ -43,12 +47,11 @@ def main():
 
     elif args.mode == 'train':
         print(f"Rozpoczynam trening modelu {args.model_type}...")
+        cfg = DatasetConfig(cache=args.cache)
         train(
+            cfg=cfg,
             model_type=args.model_type,
-            data_dir=args.data_dir,
-            output_dir=args.output_dir,
-            num_epochs=args.epochs,
-            batch_size=args.batch_size
+            epochs=args.epochs,
         )
 
     elif args.mode == 'evaluate':

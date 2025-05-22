@@ -33,7 +33,6 @@ import torch.nn.functional as F
 logger = logging.getLogger("grocery_dataset")
 logger.setLevel(logging.INFO)
 
-# CHANGE: use rotating file handler to avoid unbounded log size
 from logging.handlers import RotatingFileHandler
 file_handler = RotatingFileHandler("dataset_preparation.log", maxBytes=100 * 1024 ** 2, backupCount=3, encoding="utf-8")
 stream_handler = logging.StreamHandler(sys.stdout)
@@ -49,7 +48,7 @@ class DatasetConfig:
     data_dir             : str = "data"
     openimages_max       : int = 700
     coco_max             : int = 300
-    val_split            : float = 0.4
+    val_split            : float = 0.25
     seed                 : int = 42
     min_box_area         : int = 100
     cache                : bool = False
@@ -105,8 +104,6 @@ CLASSES = [
     "Yogurt",
     "Butter",
     "cocolino",
-    # "Wine glass",
-    # "Drink",
 ]
 CLASS_TO_IDX = {c: i for i, c in enumerate(CLASSES)}
 
@@ -511,7 +508,6 @@ def get_transform(train: bool, size: int, augment: bool = False) -> Compose:
         tfms += [
             RandomHorizontalFlip(p=0.5),
             RandomBrightnessContrast(brightness=0.2, contrast=0.2, p=0.5),
-            # … możesz dodać RandomRotation, GaussianBlur itp. …
         ]
     tfms += [ToTensor(), Normalize([0.485,0.456,0.406], [0.229,0.224,0.225])]
     return Compose(tfms)
@@ -584,8 +580,6 @@ class GroceryDataset(Dataset):
         _, H, W = img.shape
         masks = target.get("masks")
         if masks is None or masks.numel() == 0:
-            # nawet jeśli wcześniej było torch.zeros((0,h0,w0)), po Resize/HFlip
-            # rozmiar mógł ulec zmianie — nadpisujemy
             target["masks"] = torch.zeros((0, H, W), dtype=torch.uint8)
 
         return img, target

@@ -8,23 +8,17 @@ from sklearn.metrics import confusion_matrix, precision_recall_fscore_support, a
 import matplotlib.pyplot as plt
 from pycocotools.cocoeval import COCOeval
 from dataset_pipeline import CLASSES
+import torchvision.ops as ops
 
 def calculate_ap(recall, precision):
-    """
-    Oblicza średnią precyzję (Average Precision) na podstawie krzywej precyzja-czułość.
-    """
-    # Dodaj punkt (0, 1) do początku krzywej
     recall = np.concatenate(([0.0], recall, [1.0]))
     precision = np.concatenate(([0.0], precision, [0.0]))
 
-    # Oblicz pole pod krzywą precyzja-czułość
     for i in range(precision.size - 1, 0, -1):
         precision[i - 1] = max(precision[i - 1], precision[i])
 
-    # Oblicz indeksy gdzie recall zmienia się
     indices = np.where(recall[1:] != recall[:-1])[0]
 
-    # Oblicz pole pod krzywą
     ap = np.sum((recall[indices + 1] - recall[indices]) * precision[indices + 1])
 
     return ap
@@ -91,80 +85,29 @@ def calculate_map(predictions: list, targets: list, iou_threshold: float = 0.5) 
 
 
 def calculate_iou_batch(boxes1: torch.Tensor, boxes2: torch.Tensor) -> torch.Tensor:
-    """
-    Oblicza IoU (Intersection over Union) dla dwóch zestawów bounding boxów.
-    """
-    # Przekształć na tensory
     boxes1 = boxes1.clone()
     boxes2 = boxes2.clone()
 
-    # Oblicz obszar dla każdego boxu
     area1 = (boxes1[:, 2] - boxes1[:, 0]) * (boxes1[:, 3] - boxes1[:, 1])
     area2 = (boxes2[:, 2] - boxes2[:, 0]) * (boxes2[:, 3] - boxes2[:, 1])
 
-    # Oblicz współrzędne dla części wspólnej
     lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])  # left-top
     rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])  # right-bottom
 
-    # Oblicz szerokość i wysokość części wspólnej
-    wh = (rb - lt).clamp(min=0)  # szerokość-wysokość
+    wh = (rb - lt).clamp(min=0)  # width-height
 
-    # Oblicz pole części wspólnej
     inter = wh[:, :, 0] * wh[:, :, 1]
 
-    # Oblicz IoU
     iou = inter / (area1[:, None] + area2 - inter)
 
     return iou
 
-# def evaluate_model(model: torch.nn.Module, data_loader, device: torch.device, iou_threshold: float = 0.5):
-#     """
-#     Run model on data_loader and compute metrics.
-#     Returns dict with mAP, class_ap, avg_inference_time (s), optionally confusion matrix.
-#     """
-#     model.eval()
-#     cpu_device = torch.device('cpu')
-
-#     all_preds = []
-#     all_targs = []
-#     inference_times = []
-
-#     with torch.no_grad():
-#         for imgs, targs in tqdm(data_loader, desc="Evaluate", leave=False):
-#             imgs = [img.to(device) for img in imgs]
-#             targs_gpu = [{k: v.to(device) for k, v in t.items()} for t in targs]
-#             start = time.time()
-#             outputs = model(imgs)
-#             end = time.time()
-#             # Collect
-#             inference_times.append((end - start) / len(imgs))
-#             # Move to CPU
-#             for out in outputs:
-#                 all_preds.append({
-#                     'boxes': out['boxes'].to(cpu_device),
-#                     'scores': out['scores'].to(cpu_device),
-#                     'labels': out['labels'].to(cpu_device)
-#                 })
-#             for gt in targs:
-#                 all_targs.append({
-#                     'boxes': gt['boxes'],
-#                     'labels': gt['labels']
-#                 })
-
-#     mAP, class_ap = calculate_map(all_preds, all_targs, iou_threshold)
-#     avg_inf_time = float(np.mean(inference_times))
-
-#     return {
-#         'mAP': mAP,
-#         'class_ap': class_ap,
-#         'avg_inference_time': avg_inf_time
-#     }
 
 def evaluate_model(model: torch.nn.Module,
                    data_loader,
                    device: torch.device,
-                   score_threshold: float = 0.0,
-                   iou_type: str = 'segm') -> dict:
+                   score_threshold: float = 0.08,
+                   iou_type: str = 'bbox') -> dict:
     """
     Evaluate model using COCO metrics (via pycocotools).
     Filters predictions by score_threshold and computes mAP with COCOeval.
@@ -174,13 +117,11 @@ def evaluate_model(model: torch.nn.Module,
     cpu_device = torch.device('cpu')
 
     coco_gt = data_loader.dataset.coco
-    # Build inverse mapping from internal class idx to original COCO category id, if available
     inv_map = None
     if hasattr(data_loader.dataset, 'coco_id_to_class_idx'):
         inv_map = {v: k for k, v in data_loader.dataset.coco_id_to_class_idx.items()}
 
     results = []
-    image_ids = []
     inference_times = []
 
     with torch.no_grad():
@@ -203,23 +144,59 @@ def evaluate_model(model: torch.nn.Module,
 
             for out, t in zip(outputs, targets):
                 img_id = int(t['image_id'].item())
-                boxes  = out['boxes'].cpu().numpy()
-                scores = out['scores'].cpu().numpy()
-                labels = out['labels'].cpu().numpy()
-                for box, score, label in zip(boxes, scores, labels):
-                    x1, y1, x2, y2 = box
-                    # map internal label to COCO category_id
-                    cat_id = int(label)
+                # Extract predictions as CPU tensors
+                boxes = out['boxes'].cpu()
+                scores = out['scores'].cpu()
+                labels = out['labels'].cpu()
+
+                # Filter by score_threshold
+                keep_mask = scores >= score_threshold
+                boxes = boxes[keep_mask]
+                scores = scores[keep_mask]
+                labels = labels[keep_mask]
+
+                # Apply class-wise NMS
+                final_indices = []
+                for cls in labels.unique():
+                    cls_idxs = (labels == cls).nonzero(as_tuple=True)[0]
+                    cls_boxes = boxes[cls_idxs]
+                    cls_scores = scores[cls_idxs]
+                    keep = ops.nms(cls_boxes, cls_scores, iou_threshold=0.5)
+                    final_indices.append(cls_idxs[keep])
+                if final_indices:
+                    final_indices = torch.cat(final_indices)
+                else:
+                    final_indices = torch.empty((0,), dtype=torch.int64)
+
+                # Collect filtered results
+                for idx in final_indices:
+                    x1, y1, x2, y2 = boxes[idx].tolist()
+                    w, h = x2 - x1, y2 - y1
+                    label = int(labels[idx].item())
+                    cat_id = label
                     if inv_map is not None:
                         cat_id = inv_map.get(label, label)
                     results.append({
                         'image_id': img_id,
-                        'category_id': cat_id,
-                        'bbox': [float(x1), float(y1), float(x2-x1), float(y2-y1)],
-                        'score': float(score)
+                        'category_id': int(cat_id),
+                        'bbox': [float(x1), float(y1), float(w), float(h)],
+                        'score': float(scores[idx].item())
                     })
                     print(f"Result: {results[-1]}")
-                image_ids.append(img_id)
+
+                # for box, score, label in zip(boxes, scores, labels):
+                #     x1, y1, x2, y2 = box
+                #     # map internal label to COCO category_id
+                #     cat_id = int(label)
+                #     if inv_map is not None:
+                #         cat_id = inv_map.get(label, label)
+                #     results.append({
+                #         'image_id': img_id,
+                #         'category_id': cat_id,
+                #         'bbox': [float(x1), float(y1), float(x2-x1), float(y2-y1)],
+                #         'score': float(score)
+                #     })
+                #     print(f"Result: {results[-1]}")
 
     if not results:
         print("[WARN] No detections. Returning zeros.")
@@ -287,10 +264,6 @@ def plot_confusion_matrix(cm: np.ndarray, classes: list, normalize: bool = False
 
 
 def print_evaluation_results(results: dict):
-    """
-    Print evaluation metrics in a readable table.
-    """
-    # Prepare metrics
     table = [
         ("mAP@[.5:.95]", f"{results['mAP_coco']:.6f}"),
         ("mAP@0.50",       f"{results['mAP_50']:.6f}"),
@@ -320,7 +293,6 @@ def print_evaluation_results(results: dict):
     print(f"{sep}\n")
 
 
-# If this module is run directly, example usage
 if __name__ == '__main__':
     import argparse
     from model_implementation import initialize_model, load_model

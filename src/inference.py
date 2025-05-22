@@ -8,7 +8,6 @@ import torchvision.transforms as T
 import cv2
 import time
 
-# Importy z naszych modułów
 from dataset_pipeline import CLASSES
 from model_implementation import load_model
 
@@ -48,7 +47,6 @@ def run_inference(model, image_tensor, threshold=0.155):
     return filtered_predictions, inference_time
 
 def visualize_predictions(image, predictions, output_path=None):
-    # (bez zmian)
     img_np = np.array(image)
     img_draw = img_np.copy()
 
